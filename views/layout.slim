@@ -1,0 +1,19 @@
+doctype html
+html lang="en"
+  head
+    title Get In It
+    link rel="stylesheet" href="http://ajax.googleapis.com/ajax/libs/dojo/1.7.1/dijit/themes/tundra/tundra.css" media="screen"
+    script src="http://ajax.googleapis.com/ajax/libs/dojo/1.7.1/dojo/dojo.js"
+      data-dojo-config="async: true, parseOnLoad: true"
+    /! sinatra looks in the public directory for css and image files
+    script src="javascript/application.js"
+    /! link href="css/bootstrap.css" rel="stylesheet"
+  body.tundra
+    .container
+      .row
+        .span12
+          h1 Get It In
+          #tabContainer style="height: 600px" data-dojo-type="dijit.layout.TabContainer" data-dojo-props="tabPosition: 'top'"
+            == yield
+            #chartNode data-dojo-type="dijit.layout.ContentPane" data-dojo-props="title: 'Reports'"{testing}
+          #message

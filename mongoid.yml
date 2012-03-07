@@ -1,0 +1,11 @@
+
+development:
+  host: localhost
+  database: get_it_in
+
+production:
+  host: prod_host
+  port: 1000
+  username: main
+  password: balbla
+  database: get_it_in
