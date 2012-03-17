@@ -17,10 +17,9 @@ end
 # Model definition
 # Can I also include validations here ala rails? Yes.
 # need to add validations
+# TODO: How do I update the database schema??
 class Workout
   include Mongoid::Document
-  field :id , type: Integer  # Do I need this??  Looks like i do in order to specify the display order
-  field :st_exerceise , type: String
   field :complete , type: Boolean, :required => true, :default => false
   field :created_at , type: Date
   field :updated_at , type: Date
@@ -55,6 +54,7 @@ get '/' do
 end
 
 post '/' do
+  content_type :json
   w = Workout.new
   # used to determine if workout is valid or not. if at least one exercise has valid
   # data, then the workout is valid and will be persisted.
@@ -76,6 +76,7 @@ post '/' do
   end
 
   1.upto(params[:ca_cnt].to_i) do |i|
+    # same as reps above
     cals = params["ca_calories#{i}".to_sym]
     unless cals.empty?
       wo_valid = true
@@ -89,12 +90,18 @@ post '/' do
     end
   end
   # TODO: add logic that does not create workout if no exercise is valid
+  # DONE
   if (wo_valid)
     w.created_at = Time.now
     w.updated_at = Time.now
-    # need to verify that the save operation completed succesfully
+    # TODO:
+    # need to verify that the save operation completed successfully
+    # have server update the "flash" if an error occurs.
+    # add validation to the Workout and Exercise models
     w.save
-    # call to create is performed via Ajax, so no need to redirect or respond. right?
+    # respond with current workout object
+    # should I respond with workout object here or should i move to the "single retrieve" action
+    w.to_json
   end
 end
 

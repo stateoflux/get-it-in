@@ -2,12 +2,30 @@
 <html>
   <head>
     <title>Get In It</title>
+    <!-- sinatra looks in the public directory for css and image files -->
     <link href="css/bootstrap.css" rel="stylesheet" />
     <link rel="stylesheet" href="http://ajax.googleapis.com/ajax/libs/dojo/1.7.1/dijit/themes/tundra/tundra.css" media="screen" />
+    <script>
+      var dojoConfig = (function() {
+        // what is the purpose of the split and join?  it seems to me that after these
+        // operations one is left with the original string.
+        // Ah! actually the result of the operations is to remove the last "/" from the string.
+        var base = location.href.split("/");
+        base.pop();
+        base = base.join("/");
+        // Sinatra looks in the public directory for javascript files
+        base = base + "/javascript";
+        return {
+          packages: [{
+            name: "gii",
+            location: base + "/gii"
+          }]
+        };
+      })();
+    </script>
     <script src="http://ajax.googleapis.com/ajax/libs/dojo/1.7.1/dojo/dojo.js"
       data-dojo-config="async: true, parseOnLoad: true"></script>
     <script src="javascript/application.js"></script>
-    <!-- sinatra looks in the public directory for css and image files -->
   </head>
   <body class="tundra">
     <div class="container-fluid">
@@ -18,19 +36,17 @@
       </div>
       <div class="row-fluid">
         <div class="span12">
-          <div id="tabContainer">
-          <!-- <div id="tabContainer" style="height: 718px; width=940px"
-            data-dojo-type="dijit.layout.TabContainer"
-            data-dojo-props="tabPosition: 'top'"> -->
-            <%= yield %>
-            <div id="chartNode"></div>
-            <!-- <div id="chartNode"
-              data-dojo-type="dijit.layout.ContentPane"
-              data-dojo-props="title: 'Reports'"></div> -->
+          <%= yield %>
+          <div id="workoutReport" style="display: none">
+            <h2>Strength Exercise</h2>
+            <div id="stExerciseReport"></div>
+            <h2>Cardio Exercises</h2>
+            <div id="caExerciseReport"></div>
           </div>
           <div id="message"></div>
         </div>
       </div>
     </div>
+    <div id="testWidget"></div>
   </body>
 </html>
