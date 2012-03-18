@@ -17,6 +17,7 @@ require([
   "gii/StExInputWidget",
   "gii/CaExInputWidget",
   "gii/StExerciseWidget",
+  "gii/CaExerciseWidget",
   //"dojox/charting/Chart", "dojox/charting/themes/Claro",
   //"dojox/charting/plot2d/Lines", "dojox/charting/plot2d/Markers",
   //"dojox/charting/axis2d/Default",
@@ -24,7 +25,7 @@ require([
   "dojo/parser",
   "dojo/domReady!"],
   function(baseFx, fx, xhr, arrayUtils, on, topic, dom, domConstruct,
-    domAttr, domForm, domStyle, StExInputWidget, CaExInputWidget, StExerciseWidget, theme) {
+    domAttr, domForm, domStyle, StExInputWidget, CaExInputWidget, StExerciseWidget, CaExerciseWidget, theme) {
     // domAttr, domForm, StExerciseWidget, Chart, theme) {
     var workoutForm = dom.byId("workout-form");
 
@@ -32,11 +33,6 @@ require([
     createExInput.st_cnt = 0;
     createExInput.ca_cnt = 0;
 
-    // reset exercise input counters to 1 when form is submitted
-    function resetExCntr() {
-      createExInput.st_cnt = 1;
-      createExInput.ca_cnt = 1;
-    }
 
     //resetExCntr();
 
@@ -88,31 +84,6 @@ require([
 
 
   //-----------------------------------------------------------------------------
-    // clear the workout log form
-    // later, this function will have to revert the form back to it's default look (1 exercise)
-    function backToDefault() {
-      workoutForm.reset();
-
-      //TODO: investigate how to remove the extra exercise modules?
-      // - i added an id to each exercise module in the form "type_ex_number"
-      // i will delete all exercise modules except for number 1
-      // probably should fade out first then destroy?
-      // DONE
-
-      // TODO: Dry it up
-      // (3/17) TODO: exercise logic has been converted to widgets. convert code to use dijit destroy methods
-      // .destroyRecursive
-      // i just realized that i don't have any references to the created exercise widgets.  should i store these
-      // in an array this is accessible within the entire app?
-      // - DONE
-      arrayUtils.forEach(stExInputs, function(stExInput) {
-        stExInput.destroyRecursive();
-      });
-
-      arrayUtils.forEach(caExInputs, function(caExInput) {
-        caExInput.destroyRecursive();
-      });
-    }
 
     // TODO: investigate using a accordion panels to handle the transition
     // from form submission to log report display
@@ -161,7 +132,15 @@ require([
           if (response) {
             arrayUtils.forEach(response.exercises, function(exercise) {
               // console.log("ex: ", exercise);
-              new StExerciseWidget(exercise).placeAt(dom.byId("stExerciseReport"));
+              if (exercise._type == "StrengthExercise") {
+                new StExerciseWidget(exercise).placeAt(dom.byId("stExerciseReport"));
+              }
+              else if (exercise._type == "CardioExercise") {
+                new CaExerciseWidget(exercise).placeAt(dom.byId("caExerciseReport"));
+              }
+              else {
+                console.log("ERROR: exercise has no type!");
+              }
             });
           }
           else {
@@ -289,6 +268,27 @@ require([
         })
         // would like to fade in form then wipeOut
       ]).play();
+
+      // reset exercise input counters to 1 when form is submitted
+      function resetExCntr() {
+        createExInput.st_cnt = 1;
+        createExInput.ca_cnt = 1;
+      }
+
+      // clear the workout log form
+      // later, this function will have to revert the form back to it's default look (1 exercise)
+      function backToDefault() {
+        workoutForm.reset();
+
+        // TODO: Dry it up
+        arrayUtils.forEach(stExInputs, function(stExInput) {
+          stExInput.destroyRecursive();
+        });
+
+        arrayUtils.forEach(caExInputs, function(caExInput) {
+          caExInput.destroyRecursive();
+        });
+      }
     });
 });
 

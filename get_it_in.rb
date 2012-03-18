@@ -30,7 +30,7 @@ end
 class Exercise
   include Mongoid::Document
   field :exercise_name, type: String
-  field :duration, type: Float 
+  field :duration, type: Float
   embedded_in :workout
 end
 
@@ -69,8 +69,8 @@ post '/' do
       wo_valid = true
       st = StrengthExercise.new
       st.exercise_name = params["st_exercise#{i}".to_sym]
-      st.sets = params["st_sets#{i}".to_sym]
-      st.reps = reps
+      st.sets = params["st_sets#{i}".to_sym].to_i
+      st.reps = reps.to_i
       w.exercises << st
     end
   end
@@ -82,8 +82,9 @@ post '/' do
       wo_valid = true
       ca = CardioExercise.new
       ca.exercise_name = params["ca_exercise#{i}".to_sym]
-      ca.duration = params["duration#{i}".to_sym]
-      ca.distance = params["distance#{i}".to_sym]
+      puts params
+      ca.duration = params["ca_duration#{i}".to_sym].to_f
+      ca.distance = params["ca_distance#{i}".to_sym].to_f
       ca.calories = cals
       #ca.calories = params["calories#{i}".to_sym]
       w.exercises << ca
