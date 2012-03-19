@@ -1,0 +1,22 @@
+.ex-hdr {
+  border-bottom: 1px solid #ccc;
+  padding-left: 10px;
+  background-color: #ccc;
+}
+
+.ex-cntr {
+  height: 207px;
+  overflow: auto;
+  padding: 10px;
+  background-color: #f9f9f9;
+  margin-bottom: 10px;
+  border: 1px solid #f1f1f1;
+}
+
+.g-border {
+  border: 1px solid #ccc;
+}
+
+.debug {
+  background-color: #ccc;
+}

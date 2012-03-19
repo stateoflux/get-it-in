@@ -1,14 +1,17 @@
-<form id="workout-form" action="/" method="post">
+<form class="well" id="workout-form" action="/" method="post">
   <fieldset id="st_ex">
-    <legend>Strength Exercises</legend>
-    <div id="stExInContainer" style="height: 207px; overflow: auto"></div>
-    <button id="st_btn" class="btn btn-success">Add Exercise</button>
+    <!-- <legend>Strength Exercises</legend> -->
+    <legend class="">Strength Exercises</legend>
+    <div id="stExInContainer" class="ex-cntr"></div>
+    <button id="st_btn" class="btn btn-success" style="margin-bottom: 10px">Add Exercise</button>
     <input type="hidden" name="st_cnt" id="st_cnt">
   </fieldset>
-  <fieldset id="ca_ex">
-    <legend>Cardio Exercises</legend>
-    <div id="caExInContainer" style="height: 207px; overflow: auto"></div>
-    <button id="ca_btn" class="btn btn-success">Add Exercise</button>
+  <div style="border-top: 1px dashed #ccc; height: 6px"></div>
+  <fieldset id="ca_ex" style="">
+    <legend class="">Cardio Exercises</legend>
+    <!-- <legend>Cardio Exercises</legend> -->
+    <div id="caExInContainer" class="ex-cntr"></div>
+    <button id="ca_btn" class="btn btn-success" style="margin-bottom: 10px">Add Exercise</button>
     <input type="hidden" name="ca_cnt" id="ca_cnt">
   </fieldset>
   <div class="form-actions">

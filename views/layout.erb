@@ -4,6 +4,7 @@
     <title>Get In It</title>
     <!-- sinatra looks in the public directory for css and image files -->
     <link href="css/bootstrap.css" rel="stylesheet" />
+    <link href="css/gii.css" rel="stylesheet" />
     <link rel="stylesheet" href="http://ajax.googleapis.com/ajax/libs/dojo/1.7.1/dijit/themes/tundra/tundra.css" media="screen" />
     <script>
       var dojoConfig = (function() {
@@ -27,26 +28,44 @@
       data-dojo-config="async: true, parseOnLoad: true"></script>
     <script src="javascript/application.js"></script>
   </head>
-  <body class="tundra">
-    <div class="container-fluid">
-      <div class="row-fluid">
-        <div class="span12">
-          <h1>Get It In</h1>
-        </div>
-      </div>
-      <div class="row-fluid">
-        <div class="span12">
-          <%= yield %>
-          <div id="workoutReport" style="display: none">
-            <h2>Strength Exercise</h2>
-            <div id="stExerciseReport"></div>
-            <h2>Cardio Exercises</h2>
-            <div id="caExerciseReport"></div>
+  <body class="tundra" style="padding-top: 60px">
+    <div class="container">
+      <!-- navigation bar
+      ===================================================================== -->
+      <div class="navbar navbar-fixed-top">
+        <div class="navbar-inner">
+          <div class="container">
+            <a class="brand" href="#">Get It In!</a>
           </div>
-          <div id="message"></div>
         </div>
       </div>
+      <!-- content 
+      ===================================================================== -->
+      <div id="date-cntr" class="clearfix", style="width: 240px">
+        <button class="btn" style="float:left; margin-top: 5px"><i class="icon-step-backward"></i></button>
+        <div class="numeral" style="float: left; width: 50px; margin: 8px 0 0 4px">
+          <span style="font-size: 38px; padding: 6px">31</span>
+        </div>
+        <div class="d-m-y" style="float: left">
+          <p>
+            Saturday<br />
+            December 2012
+          </p>
+        </div>
+      </div>
+      <%= yield %>
+      <div id="workoutReport" class="well" style="display: none">
+        <div class="">
+          <h2 class="">Strength Exercise</h2>
+          <div id="stExerciseReport" class="ex-cntr"></div>
+        </div>
+        <div style="border-top: 1px dashed #ccc; height: 6px"></div>
+        <div class="">
+          <h2 class="">Cardio Exercises</h2>
+          <div id="caExerciseReport" class="ex-cntr"></div>
+        </div>
+      </div>
+      <div id="message"></div>
     </div>
-    <div id="testWidget"></div>
   </body>
 </html>
