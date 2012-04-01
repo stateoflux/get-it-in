@@ -3,8 +3,15 @@ require 'mongoid'
 require 'slim'
 require 'json'
 require "sinatra/reloader" if development?
+# TODO: add gems below to Gemfile and use bundler to handle dependencies
+require 'bcrypt'
+require 'securerandom'
+
+# to protect session data
+use Rack::Session::Cookie, :secret => 'A1 sauce 1s so good you should use 1t on a11 yr st34ksssss'
 
 # load the mondodb configuration file
+# what is the name of this application's db?
 Mongoid.load!("mongoid.yml")
 
 # Include Rack utils and alias the escape_html function to h()
@@ -18,14 +25,52 @@ end
 # Can I also include validations here ala rails? Yes.
 # need to add validations
 # TODO: How do I update the database schema??
-class Workout
+
+# User Model
+# =============================================================================
+# User Model is based on codebiff article & sinatra-authentication mongoid_user 
+# Model
+# http://codebiff.com/roll-your-own-sinatra-authentication
+# https://github.com/maxjustus/sinatra-authentication/blob/master/lib/models/mongoid_user.rb
+class User
   include Mongoid::Document
-  field :complete , type: Boolean, :required => true, :default => false
-  field :created_at , type: Date
-  field :updated_at , type: Date
-  embeds_many :exercises
+  include Mongoid::Timestamps # what are Timestamps used for?
+  # all fields below are strings so now need to specify type
+  field :user_name
+  field :hashed_password
+  field :salt
+  field :token
+
+  # Validations
+  validates_uniqueness_of   :user_name
+  validates_format_of       :user_name, :with =>/\w{4,}/i
+  validates_presence_of     :password
+  validates_confirmation_of :password
+  #validates_length_of       :password, :min => 6
+
+  attr_accessor :password, :password_confirmation
+
+  def password=(passwd)
+   self.salt = BCrypt::Engine.generate_salt
+   self.hashed_password = BCrypt::Engine.hash_secret(passwd, self.salt)
+  end
+
+  def self.authenticate(name, pass)
+    # first returns a single document
+    current_user = User.first(conditions: {user_name: name})
+    # current_user = get(:user_name => name)  # what is get?
+    return nil if current_user.nil?
+    return current_user if current_user.hashed_password == BCrypt::Engine.hash_secret(pass, current_user.salt)
+  end
 end
 
+class Workout
+  include Mongoid::Document
+  field :complete, type: Boolean, :required => true, :default => false
+  field :created_at, type: Date
+  field :updated_at, type: Date
+  embeds_many :exercises
+end
 
 class Exercise
   include Mongoid::Document
@@ -46,10 +91,51 @@ end
 
 
 # Routes and "controller code"  are specified in the same place (unlike rails)
+ post '/signup' do
+   # TODO: determine a way to group form parameters into a hash that I can
+   # directly pass to the User.create method
+   # ie: user = User.create(params[:user]
+   user = User.create()
+   user.user_name = params[:user_name]
+   user.password = params[:password]
+   user.password_confirmation = params[:password_confirmation]
+   # user = User.create(params[:user])
+  # TODO: investigate moving the password generation logic inside the User model
+   if user.save
+     # why use a token vs just using user.id? according to codebiff, using random token
+     # is more secure than using the user.id.  sinatra-authentication uses user.id, so
+     # i think it's ok to use.
+     puts "user's id:" + user.id
+     session[:user] = user.id
+     # session[:user] = user.token
+     redirect "/"
+   else
+     # redirect "/signup?email=#{params[:user][:email]}"
+     # return some type of error status
+   end
+ end
+
+post '/login' do
+  # User.first?
+  # going to follow the sinatra-authentication logic instead of codebiff article
+  if user = User.authenticate(params[:user_name], params[:password])
+    session[:user] = user.id
+  #if user = User.first(:user_name => params[:user_name])
+    #if user.password_hash == BCrypt::Engine.hash_secret(params[:password], user.salt)
+    #session[:user] = user.token 
+    redirect "/"
+  else
+    redirect "/login?user_name=#{params[:user_name]}"
+  end
+end
+
+get '/logout' do
+end
+
+# TODO: investigate the correct route to use to access the workout resource/s
 get '/' do
   # does mongoid specify order this way?
   # @workouts = Workout.asc(:id)
-  # slim :workout_new
    erb :workout_new
 end
 

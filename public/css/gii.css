@@ -1,3 +1,8 @@
+.login-container, .signup-container {
+  width: 390px;
+  float: left;
+}
+
 .ex-hdr {
   border-bottom: 1px solid #ccc;
   padding-left: 10px;
@@ -7,10 +12,13 @@
 .ex-cntr {
   height: 207px;
   overflow: auto;
-  padding: 10px;
   background-color: #f9f9f9;
   margin-bottom: 10px;
   border: 1px solid #f1f1f1;
+}
+
+.ex-cntr-in {
+  padding: 10px;
 }
 
 .g-border {
@@ -20,3 +28,78 @@
 .debug {
   background-color: #ccc;
 }
+/* TODO: move widget css to widget name space */
+/* reverse text */
+.rvs {
+  color: #fff
+}
+.ex-rp-cntr {
+  font-size: 20px;
+}
+.ex-name {
+  float: left;
+  width: 100px;
+  font-weight: bold;
+  padding: 12px 8px 14px 0;
+}
+.ex-name-red {
+  background-color: #e14a4f;
+}
+.ex-name-yellow {
+  background-color: #f3a44d;
+}
+.ex-name-green {
+  background-color: #83ac6f;
+}
+.ex-name-blue {
+  background-color: #39b4cf;
+}
+.ex-name-purple {
+  background-color: #9d8cae;
+}
+.ex-name-orange {
+  background-color: #f58762;
+}
+
+.ex-details {
+  float: left;
+  width: 773px;
+  border: 1px solid #f7f7f7;
+  background-color: #fff;
+  height: 18px;
+  padding: 11px 0 13px 15px;
+}
+.ex-details-red {
+  color: #e14a4f;
+}
+.ex-details-yellow {
+  color: #f3a44d;
+}
+.ex-details-green {
+  color: #83ac6f;
+}
+.ex-details-blue {
+  color: #39b4cf;
+}
+.ex-details-purple {
+  color: #9d8cae;
+}
+.ex-details-orange {
+  color: #f58762;
+}
+
+.claro .dijitDialogUnderlay { background:#000; }
+.tundra .dijitDialogUnderlay { background:#000; }
+
+/* .overlay
+{
+  background:#FFFFFF;
+  opacity: 0.5;
+  filter: alpha(opacity=50);
+  position:absolute;
+  top:0px;
+  left:0px;
+  width:100%;
+  height:100%;
+  z-index: 1000;
+} */

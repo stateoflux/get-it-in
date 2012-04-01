@@ -28,7 +28,7 @@
       data-dojo-config="async: true, parseOnLoad: true"></script>
     <script src="javascript/application.js"></script>
   </head>
-  <body class="tundra" style="padding-top: 60px">
+  <body class="tundra" style="padding-top: 60px; background-color: #a7abb1 ">
     <div class="container">
       <!-- navigation bar
       ===================================================================== -->
@@ -39,7 +39,17 @@
           </div>
         </div>
       </div>
-      <!-- content 
+      <!-- Login Modal Dialog
+      ===================================================================== -->
+      <!-- <button id="dialogTest">Click</button>
+      <div class="dijitHidden">
+        <div data-dojo-type="dijit.Dialog" style="width:450px;" data-dojo-props="title: 'Log In'" id="loginDialog">
+          <p>Please log in</p>
+          <button id="loginBtn">Log In</button>
+        </div>
+      </div> -->
+
+      <!-- content
       ===================================================================== -->
       <div id="date-cntr" class="clearfix", style="width: 240px">
         <button class="btn" style="float:left; margin-top: 5px"><i class="icon-step-backward"></i></button>
@@ -59,7 +69,6 @@
           <h2 class="">Strength Exercise</h2>
           <div id="stExerciseReport" class="ex-cntr"></div>
         </div>
-        <div style="border-top: 1px dashed #ccc; height: 6px"></div>
         <div class="">
           <h2 class="">Cardio Exercises</h2>
           <div id="caExerciseReport" class="ex-cntr"></div>
@@ -67,5 +76,8 @@
       </div>
       <div id="message"></div>
     </div>
+    <!-- Overlay
+    ===================================================================== -->
+    <!-- <div class="overlay"></div> -->
   </body>
 </html>

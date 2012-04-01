@@ -11,8 +11,8 @@ require([
   "dojo/dom", "dojo/dom-construct", "dojo/dom-attr", "dojo/dom-form",
   "dojo/dom-style",
   // Dijit Modules
-  // "dijit/layout/TabContainer",
-  // "dijit/layout/ContentPane",
+   "dijit/registry",
+   "dijit/Dialog",
   // Charting Modules
   "gii/StExInputWidget",
   "gii/CaExInputWidget",
@@ -25,7 +25,7 @@ require([
   "dojo/parser",
   "dojo/domReady!"],
   function(baseFx, fx, xhr, arrayUtils, on, topic, dom, domConstruct,
-    domAttr, domForm, domStyle, StExInputWidget, CaExInputWidget, StExerciseWidget, CaExerciseWidget, theme) {
+    domAttr, domForm, domStyle, registry, Dialog, StExInputWidget, CaExInputWidget, StExerciseWidget, CaExerciseWidget) {
     // domAttr, domForm, StExerciseWidget, Chart, theme) {
     var workoutForm = dom.byId("workout-form");
 
@@ -34,10 +34,108 @@ require([
     createExInput.ca_cnt = 0;
 
 
-    //resetExCntr();
+    // UI 
+    // =========================================================================
+    // User login (Programmatic)
+    // Some Googling showed me how to implement multiline strings in javascript
+    // 
+    var loginSignupDialog = new Dialog({
+      title: "User Login/Signup",
+      // I don't like  having so much HTML here!!!
+      // TODO: investigate how to create dialog declaratively
+      content: '<div class="login-signup-container"> \
+                  <div class="login-container"> \
+                    <p>Already signed up?  Please login below.</p> \
+                    <form id="loginForm"> \
+                      <div class="control-group"> \
+                        <label class="control-label" for="user_name">User Name</label> \
+                        <div class="controls"> \
+                         <input type="text" name="user_name" id="user_name"> \
+                        </div> \
+                      </div> \
+                      <div class="control-group"> \
+                        <label for="password">Password</label> \
+                        <div class="controls"> \
+                          <input type="password" name="password" id="password"> \
+                        </div> \
+                      </div> \
+                      <button type="submit" id="loginBtn">Log In</button> \
+                    </form> \
+                  </div> \
+                  <div class="signup-container"> \
+                    <p>Not signed up yet?  Please fill out the form below.</p> \
+                    <form id="signupForm"> \
+                      <div class="control-group"> \
+                        <label class="control-label" for="user_name">User Name</label> \
+                        <div class="controls"> \
+                         <input type="text" name="user_name" id="user_name"> \
+                        </div> \
+                      </div> \
+                      <div class="control-group"> \
+                        <label for="password">Password</label> \
+                        <div class="controls"> \
+                          <input type="password" name="password" id="password"> \
+                        </div> \
+                      </div> \
+                      <div class="control-group"> \
+                        <label for="password_confirmation">Password</label> \
+                        <div class="controls"> \
+                          <input type="password" name="password_confirmation" id="password_confirmation"> \
+                        </div> \
+                      </div> \
+                      <button type="submit" id="signupBtn">Log In</button> \
+                    </form> \
+                  </div> \
+                </div>',
+      style: "width: 800px"
+    });
 
-    //------------------------ UI ---------------------------------------------
-    ///////////////////////////////////////////////////////////////////////////
+    loginSignupDialog.show();
+    
+    // login submit handler will send data to server via ajax.  if transfer is successful then hide the dialog.
+    on(dom.byId("loginForm"), "submit", function(evt) {
+      evt.preventDefault();
+
+      var loginPost = xhr.post({
+        url: "/login",
+        timeout: 5000,
+        form: this,
+      });
+
+      loginPost.then(function() {
+        console.log("login post was successful");
+        loginSignupDialog.hide();
+      },
+      function(error) {
+        console.log(error);
+      });
+    });
+
+    // login submit handler will send data to server via ajax.  if transfer is successful then hide the dialog.
+    on(dom.byId("signupForm"), "submit", function(evt) {
+      evt.preventDefault();
+
+      var signupPost = xhr.post({
+        url: "/signup",
+        timeout: 5000,
+        form: this,
+      });
+
+      signupPost.then(function() {
+        console.log("Signup post was successful");
+        loginSignupDialog.hide();
+      },
+      function(error) {
+        console.log(error);
+      });
+    });
+    // Hide dialog when user clicks
+    /*on(dom.byId("loginBtn"), "click", function () {
+      loginDialog.hide();
+    });*/
+
+    //-------------------------------------------------------------------------
+
     // arrays to hold collection of exercise input widgets
     var stExInputs = [];
     var caExInputs = [];
@@ -133,9 +231,11 @@ require([
             arrayUtils.forEach(response.exercises, function(exercise) {
               // console.log("ex: ", exercise);
               if (exercise._type == "StrengthExercise") {
+                console.log("creating strength exercise report");
                 new StExerciseWidget(exercise).placeAt(dom.byId("stExerciseReport"));
               }
               else if (exercise._type == "CardioExercise") {
+                console.log("creating cardio exercise report");
                 new CaExerciseWidget(exercise).placeAt(dom.byId("caExerciseReport"));
               }
               else {
@@ -164,34 +264,26 @@ require([
           console.log(error);
         }
       );
-      //)
-      // how would I go about adding a new callback to the orig xhr that is only fired after
-      // the successful callback returns? if possible, i can use this mechanism to request
-      // the resulting workout log collection
-      // wow! it worked.  what happens if the post request fails?
-      // looks like it still executes to get request even though the post request fails.
-      // can I inspect the status of the post request before issuing the get?
-      // 
-      // I wonder if the request for logs should be implemented via pub/sub?  the deferred
-      // chaining seems overly complicated for this purpose, since the request for
-      // logs does not depend on the return value of the post to the db.
-      /*.then(function() {
-        xhr.get({
-          url: "/logs",
-          handleAs: "json"
-        })
-        .then(function(jsonData) {
-            console.log("request for logs succeeded", jsonData);
-          },
-          function(error) {
-            messageNode.innerHTML = "logs request failed!";
-            console.log("get request failed");
-          }
-        );
-      });*/
     });
 
+    // Cancel button click handler
+    on(dom.byId("cancelBtn"), "click", backToDefault);
 
+
+    // clear the workout log form
+    // later, this function will have to revert the form back to it's default look (1 exercise)
+    function backToDefault() {
+      workoutForm.reset();
+
+      // TODO: Dry it up
+      arrayUtils.forEach(stExInputs, function(stExInput) {
+        stExInput.destroyRecursive();
+      });
+
+      arrayUtils.forEach(caExInputs, function(caExInput) {
+        caExInput.destroyRecursive();
+      });
+    }
 
     // Chart Generation
     /*function createChart(chartData) {
@@ -275,20 +367,6 @@ require([
         createExInput.ca_cnt = 1;
       }
 
-      // clear the workout log form
-      // later, this function will have to revert the form back to it's default look (1 exercise)
-      function backToDefault() {
-        workoutForm.reset();
-
-        // TODO: Dry it up
-        arrayUtils.forEach(stExInputs, function(stExInput) {
-          stExInput.destroyRecursive();
-        });
-
-        arrayUtils.forEach(caExInputs, function(caExInput) {
-          caExInput.destroyRecursive();
-        });
-      }
     });
 });
 
