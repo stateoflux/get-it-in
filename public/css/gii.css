@@ -3,6 +3,14 @@
   float: left;
 }
 
+.flash {
+  padding: 4px 8px;
+  background-color: yellow;
+  font-size: 15px;
+  font-weight: bold;
+  border: 1px solid #ccc;
+}
+
 .ex-hdr {
   border-bottom: 1px solid #ccc;
   padding-left: 10px;

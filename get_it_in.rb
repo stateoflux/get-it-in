@@ -40,6 +40,7 @@ class User
   field :hashed_password
   field :salt
   field :token
+  embeds_many :workouts
 
   # Validations
   validates_uniqueness_of   :user_name
@@ -50,7 +51,7 @@ class User
 
   attr_accessor :password, :password_confirmation
 
-  def password=(passwd)
+  def encrypt_password(passwd)
    self.salt = BCrypt::Engine.generate_salt
    self.hashed_password = BCrypt::Engine.hash_secret(passwd, self.salt)
   end
@@ -58,7 +59,6 @@ class User
   def self.authenticate(name, pass)
     # first returns a single document
     current_user = User.first(conditions: {user_name: name})
-    # current_user = get(:user_name => name)  # what is get?
     return nil if current_user.nil?
     return current_user if current_user.hashed_password == BCrypt::Engine.hash_secret(pass, current_user.salt)
   end
@@ -66,9 +66,10 @@ end
 
 class Workout
   include Mongoid::Document
-  field :complete, type: Boolean, :required => true, :default => false
+  field :complete, type: Boolean, :required => true, :default => false # not sure why this complete field is here?
   field :created_at, type: Date
   field :updated_at, type: Date
+  embedded_in :user
   embeds_many :exercises
 end
 
@@ -95,23 +96,20 @@ end
    # TODO: determine a way to group form parameters into a hash that I can
    # directly pass to the User.create method
    # ie: user = User.create(params[:user]
-   user = User.create()
-   user.user_name = params[:user_name]
-   user.password = params[:password]
-   user.password_confirmation = params[:password_confirmation]
-   # user = User.create(params[:user])
-  # TODO: investigate moving the password generation logic inside the User model
+   user = User.new(:user_name => params[:user_name],
+                   :password => params[:password],
+                   :password_confirmation => params[:password_confirmation])
+   user.encrypt_password(params[:password])
    if user.save
-     # why use a token vs just using user.id? according to codebiff, using random token
-     # is more secure than using the user.id.  sinatra-authentication uses user.id, so
-     # i think it's ok to use.
-     puts "user's id:" + user.id
      session[:user] = user.id
-     # session[:user] = user.token
-     redirect "/"
+     # redirect "/"
    else
+     # not sure if this is a correct Rack response
+     [500, ['Oops! There were some problems creating your account.']]
      # redirect "/signup?email=#{params[:user][:email]}"
      # return some type of error status
+     # puts "user was not saved cos of following errors: #{user.errors[:password]}"
+
    end
  end
 
@@ -123,9 +121,10 @@ post '/login' do
   #if user = User.first(:user_name => params[:user_name])
     #if user.password_hash == BCrypt::Engine.hash_secret(params[:password], user.salt)
     #session[:user] = user.token 
-    redirect "/"
+    # redirect "/"
   else
-    redirect "/login?user_name=#{params[:user_name]}"
+    # redirect "/login?user_name=#{params[:user_name]}"
+    [500, ['Oops! There is something wrong with either your username or password.']]
   end
 end
 
@@ -141,6 +140,7 @@ end
 
 post '/' do
   content_type :json
+  # w = current_user.workouts.new(Workout.new)
   w = Workout.new
   # used to determine if workout is valid or not. if at least one exercise has valid
   # data, then the workout is valid and will be persisted.
@@ -185,7 +185,12 @@ post '/' do
     # need to verify that the save operation completed successfully
     # have server update the "flash" if an error occurs.
     # add validation to the Workout and Exercise models
-    w.save
+    # save workout to current_user's workout collection
+    puts "DEBUG: about to push workout on workouts collection"
+    current_user.workouts << w
+    puts "DEBUG: about to save current_user"
+    current_user.save
+    # w.save
     # respond with current workout object
     # should I respond with workout object here or should i move to the "single retrieve" action
     w.to_json
@@ -198,5 +203,13 @@ get '/logs' do
 
   workouts = Workout.asc(:id)
   workouts.to_json
+end
+
+# Helpers
+# =============================================================================
+def current_user
+  return unless session[:user]
+  puts "session[:user] is valid"
+  User.find(session[:user])
 end
 

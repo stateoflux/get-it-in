@@ -9,7 +9,7 @@ require([
   "dojo/on", "dojo/topic",
   // DOM operations
   "dojo/dom", "dojo/dom-construct", "dojo/dom-attr", "dojo/dom-form",
-  "dojo/dom-style",
+  "dojo/dom-style", "dojo/dom-class",
   // Dijit Modules
    "dijit/registry",
    "dijit/Dialog",
@@ -25,7 +25,7 @@ require([
   "dojo/parser",
   "dojo/domReady!"],
   function(baseFx, fx, xhr, arrayUtils, on, topic, dom, domConstruct,
-    domAttr, domForm, domStyle, registry, Dialog, StExInputWidget, CaExInputWidget, StExerciseWidget, CaExerciseWidget) {
+    domAttr, domForm, domStyle, domClass, registry, Dialog, StExInputWidget, CaExInputWidget, StExerciseWidget, CaExerciseWidget) {
     // domAttr, domForm, StExerciseWidget, Chart, theme) {
     var workoutForm = dom.byId("workout-form");
 
@@ -44,6 +44,7 @@ require([
       // I don't like  having so much HTML here!!!
       // TODO: investigate how to create dialog declaratively
       content: '<div class="login-signup-container"> \
+                  <div id="login-signup-error"></div> \
                   <div class="login-container"> \
                     <p>Already signed up?  Please login below.</p> \
                     <form id="loginForm"> \
@@ -83,7 +84,7 @@ require([
                           <input type="password" name="password_confirmation" id="password_confirmation"> \
                         </div> \
                       </div> \
-                      <button type="submit" id="signupBtn">Log In</button> \
+                      <button type="submit" id="signupBtn">Sign Up</button> \
                     </form> \
                   </div> \
                 </div>',
@@ -108,6 +109,9 @@ require([
       },
       function(error) {
         console.log(error);
+        var loginSignupErrorNode = dom.byId("login-signup-error");
+        loginSignupErrorNode.innerHTML = error.responseText;
+        domClass.add(loginSignupErrorNode, "flash");
       });
     });
 
@@ -127,12 +131,12 @@ require([
       },
       function(error) {
         console.log(error);
+        // TODO: This is a ugly hack. must clean up!
+        var loginSignupErrorNode = dom.byId("login-signup-error");
+        loginSignupErrorNode.innerHTML = error.responseText;
+        domClass.add(loginSignupErrorNode, "flash");
       });
     });
-    // Hide dialog when user clicks
-    /*on(dom.byId("loginBtn"), "click", function () {
-      loginDialog.hide();
-    });*/
 
     //-------------------------------------------------------------------------
 
