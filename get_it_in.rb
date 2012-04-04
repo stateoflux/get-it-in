@@ -12,6 +12,7 @@ use Rack::Session::Cookie, :secret => 'A1 sauce 1s so good you should use 1t on 
 
 # load the mondodb configuration file
 # what is the name of this application's db?
+# - get_it_in
 Mongoid.load!("mongoid.yml")
 
 # Include Rack utils and alias the escape_html function to h()
@@ -43,6 +44,7 @@ class User
   embeds_many :workouts
 
   # Validations
+  # TODO: determine how to set error messages
   validates_uniqueness_of   :user_name
   validates_format_of       :user_name, :with =>/\w{4,}/i
   validates_presence_of     :password
@@ -75,19 +77,34 @@ end
 
 class Exercise
   include Mongoid::Document
+  # TODO: convert duration field to hours & mins fields
   field :exercise_name, type: String
   field :duration, type: Float
   embedded_in :workout
+
+  # Validations
+  validates_presence_of :duration
+  validates_format_of :duration, :with =>/[1-9]{1,5}/
 end
 
 class StrengthExercise < Exercise
   field :sets, type: Integer
   field :reps, type: Integer
+
+  # Validations
+  validates_presence_of :reps
+  validates_format_of :reps, :with =>/[1-9]{1,4}/
 end
 
 class CardioExercise < Exercise
   field :distance, type: Float
   field :calories, type: Integer
+
+  # Validations
+  validates_presence_of :distance
+  validates_format_of :distance, :with =>/\d{1,4}\.\d{1,4}/
+  validates_presence_of :calories
+  validates_format_of :calories, :with =>/[1-9]{1,5}/
 end
 
 

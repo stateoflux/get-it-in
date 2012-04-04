@@ -10,9 +10,12 @@ require([
   // DOM operations
   "dojo/dom", "dojo/dom-construct", "dojo/dom-attr", "dojo/dom-form",
   "dojo/dom-style", "dojo/dom-class",
+  // Nodelist
+  "dojo/query",
   // Dijit Modules
    "dijit/registry",
    "dijit/Dialog",
+   "dijit/Tooltip",
   // Charting Modules
   "gii/StExInputWidget",
   "gii/CaExInputWidget",
@@ -25,7 +28,8 @@ require([
   "dojo/parser",
   "dojo/domReady!"],
   function(baseFx, fx, xhr, arrayUtils, on, topic, dom, domConstruct,
-    domAttr, domForm, domStyle, domClass, registry, Dialog, StExInputWidget, CaExInputWidget, StExerciseWidget, CaExerciseWidget) {
+    domAttr, domForm, domStyle, domClass, query, registry, Dialog, Tooltip,
+    StExInputWidget, CaExInputWidget, StExerciseWidget, CaExerciseWidget) {
     // domAttr, domForm, StExerciseWidget, Chart, theme) {
     var workoutForm = dom.byId("workout-form");
 
@@ -167,6 +171,32 @@ require([
 
       return exInput;
     }
+
+    // Validation of exercise inputs
+    // Can I move this logic inside the widget?
+    query(".valTxtIn").on("keyup", function(evt) {
+      // not sure if nextElementSibling is supported universally?
+      // it's not: http://www.quirksmode.org/dom/w3c_traversal.html
+      // TODO: will have to figure out a way to support IE6-8
+      var valStat = this.nextElementSibling;
+      console.log("text input value: ", this.value);
+      if(!/^[1-9]{1,3}$/.test(this.value)) {
+        console.log("failed validation");
+        valStat.innerHTML = "Wrong format";
+        domClass.remove(valStat, "label-success");
+        domClass.add(valStat, "label-important");
+      }
+      else {
+        valStat.innerHTML = "OK";
+        domClass.remove(valStat, "label-important");
+        domClass.add(valStat, "label-success");
+      }
+      // reveal the validation status
+      domClass.remove(valStat, "hidden");
+    });
+
+
+
 
 
     // TODO: DRY these up

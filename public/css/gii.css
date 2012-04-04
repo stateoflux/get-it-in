@@ -1,3 +1,10 @@
+/* Utils
+ * ===========================================================================*/
+.hidden {
+  display: none;
+}
+
+
 .login-container, .signup-container {
   width: 390px;
   float: left;
