@@ -6,7 +6,7 @@ require([
   // Utils
   "dojo/_base/array",
   // Events
-  "dojo/on", "dojo/topic",
+  "dojo/on", "dojo/topic", "dojo/mouse",
   // DOM operations
   "dojo/dom", "dojo/dom-construct", "dojo/dom-attr", "dojo/dom-form",
   "dojo/dom-style", "dojo/dom-class",
@@ -24,10 +24,11 @@ require([
   //"dojox/charting/Chart", "dojox/charting/themes/Claro",
   //"dojox/charting/plot2d/Lines", "dojox/charting/plot2d/Markers",
   //"dojox/charting/axis2d/Default",
+  "dojo/NodeList-traverse",
   // Dijit Parser
   "dojo/parser",
   "dojo/domReady!"],
-  function(baseFx, fx, xhr, arrayUtils, on, topic, dom, domConstruct,
+  function(baseFx, fx, xhr, arrayUtils, on, topic, mouse, dom, domConstruct,
     domAttr, domForm, domStyle, domClass, query, registry, Dialog, Tooltip,
     StExInputWidget, CaExInputWidget, StExerciseWidget, CaExerciseWidget) {
     // domAttr, domForm, StExerciseWidget, Chart, theme) {
@@ -142,7 +143,20 @@ require([
       });
     });
 
-    //-------------------------------------------------------------------------
+    // Exercise Input Generation
+    // ========================================================================
+    // Disable form buttons when validation fails.
+    var disableBtns = false;
+
+    topic.subscribe("disableBtns", function() {
+      console.log("disable buttons");
+      disableBtns = true;
+    });
+
+    topic.subscribe("enableBtns", function() {
+      console.log("enable buttons");
+      disableBtns = false;
+    });
 
     // arrays to hold collection of exercise input widgets
     var stExInputs = [];
@@ -154,8 +168,6 @@ require([
     createExInput("st").placeAt(dom.byId("stExInContainer"));
     createExInput("ca").placeAt(dom.byId("caExInContainer"));
 
-  //-----------------------------------------------------------------------------
-    // Exercise Input Generation
     function createExInput(exType) {
       // st_cnt & ca_cnt properties are initialized in the beginning of code app definition
       var exercise = null;
@@ -173,39 +185,78 @@ require([
     }
 
     // Validation of exercise inputs
+    // ========================================================================
     // Can I move this logic inside the widget?
-    query(".valTxtIn").on("keyup", function(evt) {
+    // Check for presence
+    /* var valTxtIn = query(".valTxtIn");
+    valTxtIn.on("blur", function(evt) {
+      var valStat = this.nextElementSibling;
+      if (this.value == "") {
+        updateValStat(valStat, "Input required", false);
+      }
+      else {
+        console.log("what da hell!");
+      }
+    });
+
+    // TODO: Need to add support no input
+    // would need to add a onblur event handler
+    valTxtIn.on("keyup", function(evt) {
       // not sure if nextElementSibling is supported universally?
       // it's not: http://www.quirksmode.org/dom/w3c_traversal.html
       // TODO: will have to figure out a way to support IE6-8
+      // - i'm thinking that I could add text input node to a NodeList and use it's
+      // next method.
+      // var valStat = query(this).next();
       var valStat = this.nextElementSibling;
-      console.log("text input value: ", this.value);
+      // console.log("DEBUG: status? " + valStat);
       if(!/^[1-9]{1,3}$/.test(this.value)) {
         console.log("failed validation");
-        valStat.innerHTML = "Wrong format";
-        domClass.remove(valStat, "label-success");
-        domClass.add(valStat, "label-important");
+        updateValStat(valStat, "Wrong format", false);
+        // Disable the add exercise & submit buttons
       }
       else {
-        valStat.innerHTML = "OK";
-        domClass.remove(valStat, "label-important");
-        domClass.add(valStat, "label-success");
+        updateValStat(valStat, "OK", true);
       }
-      // reveal the validation status
-      domClass.remove(valStat, "hidden");
     });
 
+    // Helper function to update the validation label
+    function updateValStat(node, text, success) {
+      node.innerHTML = text;
+      if (success) {
+        domClass.remove(node, "label-important");
+        domClass.add(node, "label-success");
+      }
+      else {
+        domClass.remove(node, "label-success");
+        domClass.add(node, "label-important");
+      }
+      // reveal the validation status
+      // TODO: use fade in 
+      domClass.remove(node, "hidden");
+    } */
 
-
-
-
+    // Button Event Handlers
     // TODO: DRY these up
+    var addStBtn = dom.byId("st_btn")
+    on(addStBtn, "mouse.enter, focus", function(evt) {
+      evt.preventDefault();
+      if (disableBtns) {
+        domClass.add(this, "disabled");
+      }
+      else {
+        domClass.remove(this, "disabled");
+      }
+    });
+
     // click handler that adds exercise module to form
-    on(dom.byId("st_btn"), "click", function(evt) {
+    on(addStBtn, "click", function(evt) {
       evt.preventDefault();
       //TODO: need some nice animation here if possible
-      stExInputs.push(createExInput("st"));
-      stExInputs[stExInputs.length - 1].placeAt(dom.byId("stExInContainer"));
+      if (!disableBtns) {
+        stExInputs.push(createExInput("st"));
+        stExInputs[stExInputs.length - 1].placeAt(dom.byId("stExInContainer"));
+      }
     });
 
     on(dom.byId("ca_btn"), "click", function(evt) {

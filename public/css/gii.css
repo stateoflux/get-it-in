@@ -5,6 +5,11 @@
 }
 
 
+body {
+  padding-top: 60px;
+  background: url("/img/px_by_Gre3g.png") #a7abb1 repeat;
+}
+
 .login-container, .signup-container {
   width: 390px;
   float: left;
