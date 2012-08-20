@@ -1,0 +1,1 @@
+A simple webapp for logging workouts.  This webapp is implemented with Sinatra on the backend and will use either Dojo or Angular.js on the frontend
