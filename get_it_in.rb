@@ -36,7 +36,7 @@ end
 class User
   include Mongoid::Document
   include Mongoid::Timestamps # what are Timestamps used for?
-  # all fields below are strings so now need to specify type
+  # all fields below are strings so no need to specify type
   field :user_name
   field :hashed_password
   field :salt
@@ -108,7 +108,8 @@ class CardioExercise < Exercise
 end
 
 
-# Routes and "controller code"  are specified in the same place (unlike rails)
+# Route Handlers
+# =============================================================================
  post '/signup' do
    # TODO: determine a way to group form parameters into a hash that I can
    # directly pass to the User.create method

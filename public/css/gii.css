@@ -23,6 +23,25 @@ body {
   border: 1px solid #ccc;
 }
 
+/* Date Styles
+ * ============================================================================*/
+/* Date numeral styles */
+.numeral-container {
+  float: left;
+  width: 48px;
+  margin: 8px 0 0 4px;
+}
+.numeral {
+  font-size: 38px;
+  padding: 6px 0 6px 6px;
+  color: #e14a4f;
+}
+.d-m-y {
+  float: left;
+}
+
+/* ...........................................................................*/
+
 .ex-hdr {
   border-bottom: 1px solid #ccc;
   padding-left: 10px;
