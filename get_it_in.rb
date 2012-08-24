@@ -49,7 +49,7 @@ class User
   validates_format_of       :user_name, :with =>/\w{4,}/i
   validates_presence_of     :password
   validates_confirmation_of :password
-  #validates_length_of       :password, :min => 6
+  # validates_length_of       :password, :min => 6
 
   attr_accessor :password, :password_confirmation
 
