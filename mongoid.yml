@@ -1,11 +1,20 @@
 
 development:
-  host: localhost
-  database: get_it_in
+  sessions:
+    default:
+      database: get_it_in_dev
+      hosts:
+      - localhost:27017
+
+test:
+  sessions:
+    default:
+      database: get_it_in_test
+      hosts:
+      - localhost:27017
 
 production:
-  host: prod_host
-  port: 1000
-  username: main
-  password: balbla
-  database: get_it_in
+  sessions:
+    default:
+      database:
+      hosts:
