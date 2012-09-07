@@ -12,9 +12,3 @@ test:
       database: get_it_in_test
       hosts:
       - localhost:27017
-
-production:
-  sessions:
-    default:
-      database:
-      hosts:

@@ -1,6 +1,6 @@
 require 'sinatra'
 require 'mongoid'
-require 'slim'
+# require 'slim'
 require 'json'
 require "sinatra/reloader" if development?
 # TODO: add gems below to Gemfile and use bundler to handle dependencies
@@ -17,7 +17,7 @@ Mongoid.load!("mongoid.yml")
 
 # Include Rack utils and alias the escape_html function to h()
 # actually, do I really need this?  I should catch malformed input at the client side
-helpers do    
+helpers do
   include Rack::Utils
   alias_method :h, :escape_html
 end
@@ -68,7 +68,7 @@ end
 
 class Workout
   include Mongoid::Document
-  field :complete, type: Boolean, :required => true, :default => false # not sure why this complete field is here?
+  # field :complete, type: Boolean, :required => true, :default => false # not sure why this complete field is here?
   field :created_at, type: Date
   field :updated_at, type: Date
   embedded_in :user
