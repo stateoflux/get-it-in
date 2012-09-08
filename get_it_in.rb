@@ -47,8 +47,8 @@ class User
   # TODO: determine how to set error messages
   validates_uniqueness_of   :user_name
   validates_format_of       :user_name, :with =>/\w{4,}/i
-  validates_presence_of     :password
-  validates_confirmation_of :password
+  # validates_presence_of     :password
+  # validates_confirmation_of :password
   # validates_length_of       :password, :min => 6
 
   attr_accessor :password, :password_confirmation
@@ -78,8 +78,8 @@ end
 class Exercise
   include Mongoid::Document
   # TODO: convert duration field to hours & mins fields
-  field :exercise_name, type: String
-  field :duration, type: Float
+  field :exercise_name
+  field :duration, type: Integer  # will represent number of mins
   embedded_in :workout
 
   # Validations
@@ -97,7 +97,7 @@ class StrengthExercise < Exercise
 end
 
 class CardioExercise < Exercise
-  field :distance, type: Float
+  field :distance, type: Float  # in miles
   field :calories, type: Integer
 
   # Validations

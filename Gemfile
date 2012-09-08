@@ -10,9 +10,9 @@ gem "bcrypt-ruby"
 
 group :test do
   gem "minitest"
-  gem "factory_girl"
+  gem "factory_girl", "~> 4.0"
+  gem "database_cleaner"
   # gem "guard"
-  # gem "database_cleaner"
   # gem "capybara"
   # gem "turn"
   # gem "guard"
