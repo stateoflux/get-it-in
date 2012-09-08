@@ -78,13 +78,13 @@ end
 class Exercise
   include Mongoid::Document
   # TODO: convert duration field to hours & mins fields
-  field :exercise_name
+  field :exercise_name, type: String
   field :duration, type: Integer  # will represent number of mins
   embedded_in :workout
 
   # Validations
   validates_presence_of :duration
-  validates_format_of :duration, :with =>/[1-9]{1,5}/
+  # validates_format_of :duration, :with =>/[1-9]{1,5}/
 end
 
 class StrengthExercise < Exercise
@@ -102,9 +102,9 @@ class CardioExercise < Exercise
 
   # Validations
   validates_presence_of :distance
-  validates_format_of :distance, :with =>/\d{1,4}\.\d{1,4}/
+  # validates_format_of :distance, :with =>/\d{1,4}\.\d{1,4}/
   validates_presence_of :calories
-  validates_format_of :calories, :with =>/[1-9]{1,5}/
+  # validates_format_of :calories, :with =>/[1-9]{1,5}/
 end
 
 
