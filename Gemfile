@@ -16,6 +16,8 @@ group :test do
   gem 'rb-fsevent', :require => false
   gem "guard"
   gem 'guard-minitest'
+  gem 'growl'
+  # gem "ruby_gntp", "~> 0.3.4"
   # gem "capybara"
 end
 
