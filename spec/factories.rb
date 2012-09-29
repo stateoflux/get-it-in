@@ -23,8 +23,9 @@ FactoryGirl.define do
   end
 
   factory :workout do
-    created_at {Time.now}
-    updated_at {Time.now}
+    # created_at {Time.now}
+    # updated_at {Time.now}
+    date { Date.today }
     exercises { [build(:strength_exercise)] }
   end
 

@@ -12,9 +12,10 @@ group :test do
   gem "minitest"
   gem "factory_girl", "~> 4.0"
   gem "database_cleaner"
-  # gem "guard"
+  gem "turn", "~> 0.9.6"
+  gem 'rb-fsevent', :require => false
+  gem "guard"
+  gem 'guard-minitest'
   # gem "capybara"
-  # gem "turn"
-  # gem "guard"
 end
 

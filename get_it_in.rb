@@ -11,8 +11,6 @@ require 'securerandom'
 use Rack::Session::Cookie, :secret => 'A1 sauce 1s so good you should use 1t on a11 yr st34ksssss'
 
 # load the mondodb configuration file
-# what is the name of this application's db?
-# - get_it_in
 Mongoid.load!("mongoid.yml")
 
 # Include Rack utils and alias the escape_html function to h()
@@ -22,11 +20,6 @@ helpers do
   alias_method :h, :escape_html
 end
 
-# Model definition
-# Can I also include validations here ala rails? Yes.
-# need to add validations
-# TODO: How do I update the database schema??
-
 # User Model
 # =============================================================================
 # User Model is based on codebiff article & sinatra-authentication mongoid_user 
@@ -35,20 +28,21 @@ end
 # https://github.com/maxjustus/sinatra-authentication/blob/master/lib/models/mongoid_user.rb
 class User
   include Mongoid::Document
-  include Mongoid::Timestamps # what are Timestamps used for?
+  include Mongoid::Timestamps # provides automatic created_at and updated_at attributes
   # all fields below are strings so no need to specify type
-  field :user_name
+  field :email
   field :hashed_password
   field :salt
   field :token
   embeds_many :workouts
+  accepts_nested_attributes_for :workouts
 
   # Validations
   # TODO: determine how to set error messages
-  validates_uniqueness_of   :user_name
-  validates_format_of       :user_name, :with =>/\w{4,}/i
-  # validates_presence_of     :password
-  # validates_confirmation_of :password
+  validates_uniqueness_of   :email
+  # validates_format_of       :email, :with =>/\w{4,}/i
+  validates_presence_of     :password
+  validates_confirmation_of :password
   # validates_length_of       :password, :min => 6
 
   attr_accessor :password, :password_confirmation
@@ -58,23 +52,26 @@ class User
    self.hashed_password = BCrypt::Engine.hash_secret(passwd, self.salt)
   end
 
-  def self.authenticate(name, pass)
+  def self.authenticate(email, pass)
     # first returns a single document
-    current_user = User.first(conditions: {user_name: name})
+    current_user = User.first(conditions: {email: email})
     return nil if current_user.nil?
     return current_user if current_user.hashed_password == BCrypt::Engine.hash_secret(pass, current_user.salt)
   end
 end
 
+# Workout Model
+# =============================================================================
 class Workout
   include Mongoid::Document
-  # field :complete, type: Boolean, :required => true, :default => false # not sure why this complete field is here?
-  field :created_at, type: Date
-  field :updated_at, type: Date
+  include Mongoid::Timestamps
+  field :date, type: Date
   embedded_in :user
   embeds_many :exercises
 end
 
+# Exercise Model
+# =============================================================================
 class Exercise
   include Mongoid::Document
   # TODO: convert duration field to hours & mins fields
@@ -87,6 +84,8 @@ class Exercise
   # validates_format_of :duration, :with =>/[1-9]{1,5}/
 end
 
+# Exercise Model
+# =============================================================================
 class StrengthExercise < Exercise
   field :sets, type: Integer
   field :reps, type: Integer
@@ -96,6 +95,8 @@ class StrengthExercise < Exercise
   validates_format_of :reps, :with =>/[1-9]{1,4}/
 end
 
+# Exercise Model
+# =============================================================================
 class CardioExercise < Exercise
   field :distance, type: Float  # in miles
   field :calories, type: Integer
@@ -107,27 +108,28 @@ class CardioExercise < Exercise
   # validates_format_of :calories, :with =>/[1-9]{1,5}/
 end
 
+# specify the content type (json) for all routes
+before do
+  content_type :json
+end
 
 # Route Handlers
 # =============================================================================
  post '/signup' do
+   # content_type :json  # TODO is this the standard way of specifying a json response?
    # TODO: determine a way to group form parameters into a hash that I can
    # directly pass to the User.create method
    # ie: user = User.create(params[:user]
-   user = User.new(:user_name => params[:user_name],
+   user = User.new(:email => params[:email],
                    :password => params[:password],
                    :password_confirmation => params[:password_confirmation])
    user.encrypt_password(params[:password])
    if user.save
      session[:user] = user.id
-     # redirect "/"
+     { :success => true, :email => user.email }.to_json
    else
-     # not sure if this is a correct Rack response
-     [500, ['Oops! There were some problems creating your account.']]
+     [400, [{ :success => false, :reason => user.errors.to_hash }.to_json]] # 400 is a bad client request
      # redirect "/signup?email=#{params[:user][:email]}"
-     # return some type of error status
-     # puts "user was not saved cos of following errors: #{user.errors[:password]}"
-
    end
  end
 
@@ -149,10 +151,7 @@ end
 get '/logout' do
 end
 
-# TODO: investigate the correct route to use to access the workout resource/s
 get '/' do
-  # does mongoid specify order this way?
-  # @workouts = Workout.asc(:id)
    erb :workout_new
 end
 
@@ -222,6 +221,11 @@ get '/logs' do
   workouts = Workout.asc(:id)
   workouts.to_json
 end
+
+get '/from/:fr_year/:fr_month/:fr_day/to/:to_year/:to_month/:to_day' do
+  "from date: #{params[:fr_year]} #{params[:fr_month]} #{params[:fr_day]}   to date: #{params[:to_year]} #{params[:to_month]} #{params[:to_day]}"
+end
+
 
 # Helpers
 # =============================================================================

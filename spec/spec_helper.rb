@@ -1,5 +1,6 @@
 ENV['RACK_ENV'] = 'test'
-require 'minitest/autorun'
+require 'turn/autorun'
+# require 'minitest/autorun'
 require 'rack/test'
 require 'factory_girl'
 require 'database_cleaner'
@@ -14,6 +15,7 @@ end
 FactoryGirl.find_definitions
 
 # database_cleaner gem config
+# =============================================================================
 DatabaseCleaner.strategy = :truncation
 
 class MiniTest::Spec
@@ -25,4 +27,11 @@ class MiniTest::Spec
     DatabaseCleaner.clean
   end
 end
+
+# Turn gem config
+# =============================================================================
+Turn.config.format = :outline
+# Turn.config.format = :progress
+
+
 
