@@ -54,7 +54,7 @@ class User
 
   def self.authenticate(email, pass)
     # first returns a single document
-    current_user = User.first(conditions: {email: email})
+    current_user = User.find_by(email: email)
     return nil if current_user.nil?
     return current_user if current_user.hashed_password == BCrypt::Engine.hash_secret(pass, current_user.salt)
   end
@@ -112,43 +112,40 @@ end
 before do
   content_type :json
 end
+# TODO: investigate cleaning up the response expression.  maybe move the logic into a 
+# helper
 
 # Route Handlers
 # =============================================================================
- post '/signup' do
-   # content_type :json  # TODO is this the standard way of specifying a json response?
-   # TODO: determine a way to group form parameters into a hash that I can
-   # directly pass to the User.create method
-   # ie: user = User.create(params[:user]
-   user = User.new(:email => params[:email],
-                   :password => params[:password],
-                   :password_confirmation => params[:password_confirmation])
-   user.encrypt_password(params[:password])
-   if user.save
-     session[:user] = user.id
-     { :success => true, :email => user.email }.to_json
-   else
-     [400, [{ :success => false, :reason => user.errors.to_hash }.to_json]] # 400 is a bad client request
-     # redirect "/signup?email=#{params[:user][:email]}"
-   end
- end
+post '/signup' do
+  # content_type :json  # TODO is this the standard way of specifying a json response?
+  # TODO: determine a way to group form parameters into a hash that I can
+  # directly pass to the User.create method
+  # ie: user = User.create(params[:user]
+  user = User.new(:email => params[:email],
+                  :password => params[:password],
+                  :password_confirmation => params[:password_confirmation])
+  user.encrypt_password(params[:password])
+  if user.save
+    session[:user] = user.id
+    { :success => true, :email => user.email }.to_json
+  else
+    [400, [{ :success => false, :reason => user.errors.to_hash }.to_json]] # 400 is a bad client request
+  end
+end
 
 post '/login' do
-  # User.first?
-  # going to follow the sinatra-authentication logic instead of codebiff article
-  if user = User.authenticate(params[:user_name], params[:password])
+  if user = User.authenticate(params[:email], params[:password])
     session[:user] = user.id
-  #if user = User.first(:user_name => params[:user_name])
-    #if user.password_hash == BCrypt::Engine.hash_secret(params[:password], user.salt)
-    #session[:user] = user.token 
-    # redirect "/"
+    { :success => true, :email => user.email }.to_json
   else
-    # redirect "/login?user_name=#{params[:user_name]}"
-    [500, ['Oops! There is something wrong with either your username or password.']]
+    [400, [{ :success => false, :reason => "Login credentials are incorrect" }.to_json]] # 400 is a bad client request
   end
 end
 
 get '/logout' do
+  session[:user] = nil
+  { :success => true }.to_json
 end
 
 get '/' do

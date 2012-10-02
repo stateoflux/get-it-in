@@ -1,7 +1,7 @@
 FactoryGirl.define do
 
   factory :user do
-    user_name  "Wayne Montague"
+    email  "wayne.montague@zmail.com"
     hashed_password {}
     # salt {}
     # token {}
