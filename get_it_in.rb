@@ -144,12 +144,26 @@ post '/login' do
 end
 
 get '/logout' do
-  session[:user] = nil
+  session.clear
   { :success => true }.to_json
 end
 
 get '/' do
    erb :workout_new
+end
+
+# a Fake route. Only used for setting the session
+# in order to test the API.
+# TODO: investigate if possible for this route
+# to be valid only in the test environment
+# 
+post '/set_session/:id' do
+  session[:user] = params[:id]
+end
+
+get '/api/workouts/:id' do
+  halt 400 unless authenticated?
+  current_user.workouts.find(params[:id]).to_json
 end
 
 post '/' do
@@ -226,9 +240,13 @@ end
 
 # Helpers
 # =============================================================================
+#
+def authenticated?
+  current_user.is_a? User
+end
+
 def current_user
   return unless session[:user]
-  puts "session[:user] is valid"
   User.find(session[:user])
 end
 

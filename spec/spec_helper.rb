@@ -19,13 +19,13 @@ FactoryGirl.find_definitions
 DatabaseCleaner.strategy = :truncation
 
 class MiniTest::Spec
-  # before :each do
-  #   DatabaseCleaner.start # I'm using Mongoid and this gem only supports the truncation strategy, therefore I don't think i need this block
-  # end
-
   after :each do
     DatabaseCleaner.clean
   end
+end
+
+def set_session(id)
+  post '/set_session/' + id
 end
 
 # Turn gem config

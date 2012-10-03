@@ -128,16 +128,70 @@ end
 # WORKOUTS API
 # =============================================================================
 # Will need to simulate a logged in user
+# how do i simulate?
+# what determines that a user is logged in?
+# - session[:user] is not nil.
+# need to populate session with a user id
+# id needs to correspond to a user in db.
+# how do I populate the session?
+# can I access the session object from the Rack::Test Environment?
+# according to stackoverflow post:
+# http://stackoverflow.com/questions/7695775/sinatra-racktest-rspec2-using-sessions
+# I will have to add a route within the application that will allow
+# me to set the session object.
+# will create this as a method within spec_helper.rb
 
 
-describe "GET workouts/:id" do
-  describe "when request succeeds" do
-    it "responds with requested workout json object" do
+describe "GET api/workouts/:id" do
+
+  describe "when user in not logged in" do
+    it "responds with a error status code (400)" do
+      get '/api/workouts/1'
+      last_response.must_be :client_error?
     end
   end
 
-  describe "when request fails" do
-    it "responds with an 'error' json object" do
+  describe "when user is logged in" do
+    before do
+      class User
+        # override the _id method since by default it returns an ObjectId
+        # which cannot be converted to a string.
+        field :_id, type: String, default: "007"
+
+        def self.add_user(user)
+          @@user = user
+        end
+        def self.find(id)
+          @@user
+        end
+
+        def self.workout_id
+          @@user.workouts[0].id
+        end
+      end
+
+      class Workout
+        field :_id, type: String, default: "1"
+      end
+
+      wayne = FactoryGirl.build(:user_with_workouts)
+      User.add_user(wayne)
+      set_session(wayne.id)
+    end
+
+    it "responds with a success status code (200)" do
+      get '/api/workouts/' + User.workout_id
+      last_response.must_be :successful?
+    end
+
+    it "responds with requested workout json object" do
+      get '/api/workouts/' + User.workout_id
+      last_response.must_be :successful?
+      response = JSON.parse(last_response.body)
+      response.size.must_equal 5
+      response['exercises'].must_be_instance_of Array
+      response['exercises'][0].must_equal 8
+      response['exercises'].wont_be :empty?
     end
   end
 end
