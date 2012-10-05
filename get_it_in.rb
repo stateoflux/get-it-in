@@ -65,7 +65,7 @@ end
 class Workout
   include Mongoid::Document
   include Mongoid::Timestamps
-  field :date, type: Date
+  field :workout_date, type: Date
   embedded_in :user
   embeds_many :exercises
 end
@@ -130,7 +130,8 @@ post '/signup' do
     session[:user] = user.id
     { :success => true, :email => user.email }.to_json
   else
-    [400, [{ :success => false, :reason => user.errors.to_hash }.to_json]] # 400 is a bad client request
+    json_status 400, user.errors.to_hash
+    # [400, [{ :success => false, :reason => user.errors.to_hash }.to_json]] # 400 is a bad client request
   end
 end
 
@@ -163,7 +164,11 @@ end
 
 get '/api/workouts/:id' do
   halt 400 unless authenticated?
-  current_user.workouts.find(params[:id]).to_json
+  if w = current_user.workouts.find(params[:id])
+    w.to_json
+  else
+    [404, [{ :success => false, :reason => "The requested workout was not found" }.to_json]]
+  end
 end
 
 post '/' do
@@ -248,5 +253,13 @@ end
 def current_user
   return unless session[:user]
   User.find(session[:user])
+end
+
+def json_status(code, reason)
+  status code
+  {
+    :status => code,
+    :reason => reason
+  }.to_json
 end
 

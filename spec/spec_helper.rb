@@ -4,6 +4,7 @@ require 'turn/autorun'
 require 'rack/test'
 require 'factory_girl'
 require 'database_cleaner'
+require 'rr'
 
 begin
   require_relative '../get_it_in'
@@ -33,5 +34,13 @@ end
 Turn.config.format = :outline
 # Turn.config.format = :progress
 
+# RR Setup
+# class MiniTest::Unit::TestCase
+#   include RR:Adapters::MiniTest
+# end
+class MockSpec < MiniTest::Spec
+  include RR::Adapters::RRMethods
+end
+MiniTest::Spec.register_spec_type(/.*/, MockSpec)
 
 

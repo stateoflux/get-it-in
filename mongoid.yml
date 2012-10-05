@@ -5,10 +5,15 @@ development:
       database: get_it_in_dev
       hosts:
       - localhost:27017
+  options:
+    raise_not_found_error: false
 
 test:
+  raise_not_found_error: false
   sessions:
     default:
       database: get_it_in_test
       hosts:
       - localhost:27017
+  options:
+    raise_not_found_error: false

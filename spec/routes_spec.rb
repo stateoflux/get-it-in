@@ -16,15 +16,15 @@ describe "POST signup" do
 
   describe "when signup succeeds" do
     before do
-      post '/signup', :email => @email, :password => @passwd, 
+      post '/signup', :email => @email, :password => @passwd,
         :password_confirmation => @passwd
     end
 
-    it "responds with a success status code (200) when user is valid" do
+    it "responds with status code 200" do
       last_response.must_be :successful?
     end
 
-    it "responds with a 'success' json object when user is valid" do
+    it "responds with a 'success' json object" do
       response = JSON.parse(last_response.body)
       response.size.must_equal 2
       response['success'].must_equal true
@@ -38,14 +38,13 @@ describe "POST signup" do
         :password_confirmation => "zion1"
     end
 
-    it "responds with a client error status code (400) when user is invalid" do
+    it "responds with status code 400" do
       last_response.must_be :client_error?
     end
 
-    it "responds with an 'error' json object when user is invalid" do
+    it "responds with an 'error' json object" do
       response = JSON.parse(last_response.body)
-      response.size.must_equal 2
-      response['success'].must_equal false
+      response['status'].must_equal 400
       response['reason'].must_be_instance_of Hash
       response['reason'].wont_be :empty?
     end
@@ -63,20 +62,22 @@ describe "POST login" do
 
   describe "when login succeeds" do
     before do
-      # stub out the authenticate method
-      class User
-        def self.authenticate(email, pass)
-          FactoryGirl.build(:user)
-        end
-      end
+      # hmmm, the test case is looking for email & pass, not sure why.  will have to investigate
+      # mock(User).authenticate(email, pass).returns(FactoryGirl.build(:user))
+       # stub out the authenticate method
+       class User
+         def self.authenticate(email, pass)
+           FactoryGirl.build(:user)
+         end
+       end
       post '/login', :email => @email, :password => @passwd
     end
 
-    it "responds with a success status code (200) when user is valid" do
+    it "responds with status code 200" do
       last_response.must_be :successful?
     end
 
-    it "responds with a 'success' json object when user is valid" do
+    it "responds with a 'success' json object" do
       response = JSON.parse(last_response.body)
       response.size.must_equal 2
       response['success'].must_equal true
@@ -95,11 +96,11 @@ describe "POST login" do
       post '/login', :email => @email, :password => @passwd
     end
 
-    it "responds with a client error status code (400) when user is invalid" do
+    it "responds with status code 400" do
       last_response.must_be :client_error?
     end
 
-    it "responds with an 'error' json object when user is invalid" do
+    it "responds with an 'error' json object" do
       response = JSON.parse(last_response.body)
       response.size.must_equal 2
       response['success'].must_equal false
@@ -114,7 +115,7 @@ describe "GET logout" do
     get '/logout'
   end
 
-  it "responds with a success status code (200)" do
+  it "responds with status code 200" do
     last_response.must_be :successful?
   end
 
@@ -145,7 +146,7 @@ end
 describe "GET api/workouts/:id" do
 
   describe "when user in not logged in" do
-    it "responds with a error status code (400)" do
+    it "responds with status code 400" do
       get '/api/workouts/1'
       last_response.must_be :client_error?
     end
@@ -179,19 +180,40 @@ describe "GET api/workouts/:id" do
       set_session(wayne.id)
     end
 
-    it "responds with a success status code (200)" do
-      get '/api/workouts/' + User.workout_id
-      last_response.must_be :successful?
+    describe "when request succeeds" do
+      it "responds with a status code 200" do
+        get '/api/workouts/' + User.workout_id
+        last_response.must_be :successful?
+      end
+
+      it "responds with requested workout json object" do
+        get '/api/workouts/' + User.workout_id
+        last_response.must_be :successful?
+        response = JSON.parse(last_response.body)
+        response['workout_date'].must_be_instance_of String  # why is this a string? shouldn't this be a Date object?
+        response['exercises'].must_be_instance_of Array
+        response['exercises'][0].size.must_be :>=, 4
+        response['exercises'].wont_be :empty?
+      end
     end
 
-    it "responds with requested workout json object" do
-      get '/api/workouts/' + User.workout_id
-      last_response.must_be :successful?
-      response = JSON.parse(last_response.body)
-      response.size.must_equal 5
-      response['exercises'].must_be_instance_of Array
-      response['exercises'][0].must_equal 8
-      response['exercises'].wont_be :empty?
+    describe "when request fails" do
+      before do
+        get '/api/workouts/7'
+      end
+
+      it "responds with status code 404" do
+        last_response.must_be :not_found?
+      end
+
+      it "responds with an error json object" do
+        skip
+        response = JSON.parse(last_response.body)
+        response.size.must_equal 2
+        response['success'].must_equal false
+        response['reason'].must_be_instance_of String
+        response['reason'].wont_be :empty?
+      end
     end
   end
 end
