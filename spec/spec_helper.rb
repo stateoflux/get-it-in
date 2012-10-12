@@ -25,9 +25,6 @@ class MiniTest::Spec
   end
 end
 
-def set_session(id)
-  post '/set_session/' + id
-end
 
 # Turn gem config
 # =============================================================================
@@ -35,12 +32,30 @@ Turn.config.format = :outline
 # Turn.config.format = :progress
 
 # RR Setup
-# class MiniTest::Unit::TestCase
-#   include RR:Adapters::MiniTest
-# end
+# =============================================================================
 class MockSpec < MiniTest::Spec
   include RR::Adapters::RRMethods
 end
 MiniTest::Spec.register_spec_type(/.*/, MockSpec)
 
 
+# helper methods
+# ============================================================================
+
+GOOD_ID = "1"
+BAD_ID = "7"
+
+def set_session(id)
+  post '/set_session/' + id
+end
+
+def login_as(user)
+  stub(user).id { "007" }
+  set_session(user.id)
+  stub(User).find(is_a(String)) { user }
+  any_instance_of(Exercise) do |e|
+     stub(e).id { GOOD_ID }
+  end
+  stub(user.exercises).find(user.exercises[0].id) { user.exercises[0] }
+  stub(user.exercises).find(BAD_ID) { nil }
+end

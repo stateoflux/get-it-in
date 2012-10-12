@@ -13,29 +13,22 @@ use Rack::Session::Cookie, :secret => 'A1 sauce 1s so good you should use 1t on 
 # load the mondodb configuration file
 Mongoid.load!("mongoid.yml")
 
-# Include Rack utils and alias the escape_html function to h()
-# actually, do I really need this?  I should catch malformed input at the client side
-helpers do
-  include Rack::Utils
-  alias_method :h, :escape_html
-end
 
 # User Model
 # =============================================================================
-# User Model is based on codebiff article & sinatra-authentication mongoid_user 
-# Model
-# http://codebiff.com/roll-your-own-sinatra-authentication
-# https://github.com/maxjustus/sinatra-authentication/blob/master/lib/models/mongoid_user.rb
 class User
   include Mongoid::Document
   include Mongoid::Timestamps # provides automatic created_at and updated_at attributes
   # all fields below are strings so no need to specify type
+  field :first_name
+  field :last_name
   field :email
   field :hashed_password
   field :salt
   field :token
-  embeds_many :workouts
-  accepts_nested_attributes_for :workouts
+  embeds_many :exercises
+  # embeds_many :workouts
+  accepts_nested_attributes_for :exercises
 
   # Validations
   # TODO: determine how to set error messages
@@ -58,8 +51,13 @@ class User
     return nil if current_user.nil?
     return current_user if current_user.hashed_password == BCrypt::Engine.hash_secret(pass, current_user.salt)
   end
+
+  def as_json(options={})
+    super(:only => [:email])
+  end
 end
 
+=begin
 # Workout Model
 # =============================================================================
 class Workout
@@ -69,6 +67,7 @@ class Workout
   embedded_in :user
   embeds_many :exercises
 end
+=end
 
 # Exercise Model
 # =============================================================================
@@ -76,16 +75,24 @@ class Exercise
   include Mongoid::Document
   # TODO: convert duration field to hours & mins fields
   field :exercise_name, type: String
+  field :workout_date, type: Date
+  field :start_time, type: Time
   field :duration, type: Integer  # will represent number of mins
-  embedded_in :workout
+  field :sets, type: Integer
+  field :reps, type: Integer
+  field :distance, type: Float  # in miles
+  field :calories, type: Integer
+  embedded_in :user
+  # embedded_in :workout
 
   # Validations
-  validates_presence_of :duration
+  # validates_presence_of :duration
   # validates_format_of :duration, :with =>/[1-9]{1,5}/
 end
 
 # Exercise Model
 # =============================================================================
+=begin
 class StrengthExercise < Exercise
   field :sets, type: Integer
   field :reps, type: Integer
@@ -107,11 +114,18 @@ class CardioExercise < Exercise
   validates_presence_of :calories
   # validates_format_of :calories, :with =>/[1-9]{1,5}/
 end
+=end
 
 # specify the content type (json) for all routes
 before do
   content_type :json
 end
+
+before '/api/exercises*' do
+  halt 400 unless authenticated?
+end
+
+
 # TODO: investigate cleaning up the response expression.  maybe move the logic into a 
 # helper
 
@@ -128,25 +142,24 @@ post '/signup' do
   user.encrypt_password(params[:password])
   if user.save
     session[:user] = user.id
-    { :success => true, :email => user.email }.to_json
+    auth_response(200, user)
   else
     json_status 400, user.errors.to_hash
-    # [400, [{ :success => false, :reason => user.errors.to_hash }.to_json]] # 400 is a bad client request
   end
 end
 
 post '/login' do
   if user = User.authenticate(params[:email], params[:password])
     session[:user] = user.id
-    { :success => true, :email => user.email }.to_json
+    auth_response(200, user)
   else
-    [400, [{ :success => false, :reason => "Login credentials are incorrect" }.to_json]] # 400 is a bad client request
+    json_status 400, "Login credentials are incorrect"
   end
 end
 
 get '/logout' do
   session.clear
-  { :success => true }.to_json
+  { :status => 200 }.to_json
 end
 
 get '/' do
@@ -162,21 +175,26 @@ post '/set_session/:id' do
   session[:user] = params[:id]
 end
 
-get '/api/workouts/:id' do
-  halt 400 unless authenticated?
-  if w = current_user.workouts.find(params[:id])
-    w.to_json
+get '/api/exercises/:id' do
+  if exercise = current_user.exercises.find(params[:id])
+    exercise.to_json
   else
-    [404, [{ :success => false, :reason => "The requested workout was not found" }.to_json]]
+    json_status 404, "The requested exercise was not found"
   end
 end
 
-post '/' do
-  content_type :json
+post '/api/exercises' do
+
+end
+
+# post '/' do
+  # content_type :json
   # w = current_user.workouts.new(Workout.new)
-  w = Workout.new
+  # w = Workout.new
   # used to determine if workout is valid or not. if at least one exercise has valid
   # data, then the workout is valid and will be persisted.
+
+=begin
   wo_valid = false
 
   # TODO: DRY this up
@@ -229,6 +247,7 @@ post '/' do
     w.to_json
   end
 end
+=end
 
 get '/logs' do
   # need to investigate the necessary of specifying the content as json via
@@ -246,6 +265,15 @@ end
 # Helpers
 # =============================================================================
 #
+#ActiveRecord::Base.include_root_in_json = false
+
+# Include Rack utils and alias the escape_html function to h()
+# actually, do I really need this?  I should catch malformed input at the client side
+helpers do
+  include Rack::Utils
+  alias_method :h, :escape_html
+end
+
 def authenticated?
   current_user.is_a? User
 end
@@ -260,6 +288,14 @@ def json_status(code, reason)
   {
     :status => code,
     :reason => reason
+  }.to_json
+end
+
+def auth_response(code, user)
+  status code
+  {
+    :status => code,
+    :user => user.to_json
   }.to_json
 end
 

@@ -26,9 +26,9 @@ describe "POST signup" do
 
     it "responds with a 'success' json object" do
       response = JSON.parse(last_response.body)
-      response.size.must_equal 2
-      response['success'].must_equal true
-      response['email'].must_equal @email
+      response.size.must_be :>=, 2
+      response['status'].must_equal 200
+      response['user'].wont_be :empty?
     end
   end
 
@@ -50,7 +50,6 @@ describe "POST signup" do
     end
   end
 end
-
 
 describe "POST login" do
   before do
@@ -79,9 +78,9 @@ describe "POST login" do
 
     it "responds with a 'success' json object" do
       response = JSON.parse(last_response.body)
-      response.size.must_equal 2
-      response['success'].must_equal true
-      response['email'].must_equal @email
+      response.size.must_be :>=, 2
+      response['status'].must_equal 200
+      response['user'].wont_be :empty?
     end
   end
 
@@ -103,7 +102,7 @@ describe "POST login" do
     it "responds with an 'error' json object" do
       response = JSON.parse(last_response.body)
       response.size.must_equal 2
-      response['success'].must_equal false
+      response['status'].must_equal 400
       response['reason'].must_be_instance_of String
       response['reason'].wont_be :empty?
     end
@@ -122,11 +121,11 @@ describe "GET logout" do
   it "responds with a 'success' json object" do
     response = JSON.parse(last_response.body)
     response.size.must_equal 1
-    response['success'].must_equal true
+    response['status'].must_equal 200
   end
 end
 
-# WORKOUTS API
+# exerciseS API
 # =============================================================================
 # Will need to simulate a logged in user
 # how do i simulate?
@@ -143,63 +142,38 @@ end
 # will create this as a method within spec_helper.rb
 
 
-describe "GET api/workouts/:id" do
+describe "GET api/exercises/:id" do
 
   describe "when user in not logged in" do
     it "responds with status code 400" do
-      get '/api/workouts/1'
+      get '/api/exercises/1'
       last_response.must_be :client_error?
     end
   end
 
   describe "when user is logged in" do
     before do
-      class User
-        # override the _id method since by default it returns an ObjectId
-        # which cannot be converted to a string.
-        field :_id, type: String, default: "007"
-
-        def self.add_user(user)
-          @@user = user
-        end
-        def self.find(id)
-          @@user
-        end
-
-        def self.workout_id
-          @@user.workouts[0].id
-        end
-      end
-
-      class Workout
-        field :_id, type: String, default: "1"
-      end
-
-      wayne = FactoryGirl.build(:user_with_workouts)
-      User.add_user(wayne)
-      set_session(wayne.id)
+      wayne = FactoryGirl.build(:user_with_exercises)
+      login_as(wayne)
+      get '/api/exercises/' + wayne.exercises[0].id
     end
 
     describe "when request succeeds" do
       it "responds with a status code 200" do
-        get '/api/workouts/' + User.workout_id
         last_response.must_be :successful?
       end
 
-      it "responds with requested workout json object" do
-        get '/api/workouts/' + User.workout_id
+      it "responds with requested exercise json object" do
         last_response.must_be :successful?
         response = JSON.parse(last_response.body)
-        response['workout_date'].must_be_instance_of String  # why is this a string? shouldn't this be a Date object?
-        response['exercises'].must_be_instance_of Array
-        response['exercises'][0].size.must_be :>=, 4
-        response['exercises'].wont_be :empty?
+        response.size.must_be :>=, 3
+        response['workout_date'].must_be_instance_of String
       end
     end
 
     describe "when request fails" do
       before do
-        get '/api/workouts/7'
+        get '/api/exercises/7'
       end
 
       it "responds with status code 404" do
@@ -207,10 +181,68 @@ describe "GET api/workouts/:id" do
       end
 
       it "responds with an error json object" do
+        response = JSON.parse(last_response.body)
+        response.size.must_be :>=, 2
+        response['status'].must_equal 404
+        response['reason'].must_be_instance_of String
+        response['reason'].wont_be :empty?
+      end
+    end
+  end
+end
+
+
+describe "POST api/exercises" do
+
+  describe "when user in not logged in" do
+    it "responds with status code 400" do
+      post '/api/exercises'
+      last_response.must_be :client_error?
+    end
+  end
+
+  describe "when user is logged in" do
+    before do
+      @wayne = FactoryGirl.build(:user_with_exercises)
+      login_as(@wayne)
+      post '/api/exercises',
+          FactoryGirl.attributes_for(:exercise, name: "squats")
+    end
+
+    describe "when request succeeds" do
+      it "responds with a status code 200" do
+        last_response.must_be :successful?
+      end
+
+      it "responds with the newly created exercise object" do
         skip
         response = JSON.parse(last_response.body)
-        response.size.must_equal 2
-        response['success'].must_equal false
+        response['exercise'].wont_be :empty?
+        response['exercise']['name'].must_equal 
+        response['exercise']['workout_date'].must_equal
+        response['exercise']['start_time'].must_equal
+        response['exercise']['calories'].must_equal
+        response['exercise']['duration'].must_equal 
+        response['exercise']['sets'].must_equal 
+        response['exercise']['reps'].must_equal 
+      end
+    end
+
+    describe "when request fails" do
+      before do
+        get '/api/exercises/7'
+      end
+
+      it "responds with status code 404" do
+        skip
+        last_response.must_be :not_found?
+      end
+
+      it "responds with an error json object" do
+        skip
+        response = JSON.parse(last_response.body)
+        response.size.must_be :>=, 2
+        response['status'].must_equal 404
         response['reason'].must_be_instance_of String
         response['reason'].wont_be :empty?
       end
