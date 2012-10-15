@@ -41,10 +41,10 @@ MiniTest::Spec.register_spec_type(/.*/, MockSpec)
 
 # helper methods
 # ============================================================================
-
 GOOD_ID = "1"
 BAD_ID = "7"
 
+# easier way to set the session hash within the test environment
 def set_session(id)
   post '/set_session/' + id
 end

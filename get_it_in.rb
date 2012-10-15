@@ -26,18 +26,19 @@ class User
   field :hashed_password
   field :salt
   field :token
-  embeds_many :exercises
-  # embeds_many :workouts
+  has_many :exercises
+  # embeds_many :exercises
   accepts_nested_attributes_for :exercises
 
   # Validations
   # TODO: determine how to set error messages
-  validates_uniqueness_of   :email
+  # validates_uniqueness_of   :email
   # validates_format_of       :email, :with =>/\w{4,}/i
   validates_presence_of     :password
   validates_confirmation_of :password
   # validates_length_of       :password, :min => 6
 
+  # TODO: add security to the hashed_password, salt & token fields
   attr_accessor :password, :password_confirmation
 
   def encrypt_password(passwd)
@@ -57,24 +58,12 @@ class User
   end
 end
 
-=begin
-# Workout Model
-# =============================================================================
-class Workout
-  include Mongoid::Document
-  include Mongoid::Timestamps
-  field :workout_date, type: Date
-  embedded_in :user
-  embeds_many :exercises
-end
-=end
-
 # Exercise Model
 # =============================================================================
 class Exercise
   include Mongoid::Document
   # TODO: convert duration field to hours & mins fields
-  field :exercise_name, type: String
+  field :name, type: String
   field :workout_date, type: Date
   field :start_time, type: Time
   field :duration, type: Integer  # will represent number of mins
@@ -82,39 +71,16 @@ class Exercise
   field :reps, type: Integer
   field :distance, type: Float  # in miles
   field :calories, type: Integer
-  embedded_in :user
+  belongs_to :user
   # embedded_in :workout
 
   # Validations
   # validates_presence_of :duration
   # validates_format_of :duration, :with =>/[1-9]{1,5}/
+  def as_json(options={})
+    super(root: true)
+  end
 end
-
-# Exercise Model
-# =============================================================================
-=begin
-class StrengthExercise < Exercise
-  field :sets, type: Integer
-  field :reps, type: Integer
-
-  # Validations
-  validates_presence_of :reps
-  validates_format_of :reps, :with =>/[1-9]{1,4}/
-end
-
-# Exercise Model
-# =============================================================================
-class CardioExercise < Exercise
-  field :distance, type: Float  # in miles
-  field :calories, type: Integer
-
-  # Validations
-  validates_presence_of :distance
-  # validates_format_of :distance, :with =>/\d{1,4}\.\d{1,4}/
-  validates_presence_of :calories
-  # validates_format_of :calories, :with =>/[1-9]{1,5}/
-end
-=end
 
 # specify the content type (json) for all routes
 before do
@@ -124,10 +90,6 @@ end
 before '/api/exercises*' do
   halt 400 unless authenticated?
 end
-
-
-# TODO: investigate cleaning up the response expression.  maybe move the logic into a 
-# helper
 
 # Route Handlers
 # =============================================================================
@@ -142,7 +104,7 @@ post '/signup' do
   user.encrypt_password(params[:password])
   if user.save
     session[:user] = user.id
-    auth_response(200, user)
+    auth_response 200, user
   else
     json_status 400, user.errors.to_hash
   end
@@ -175,6 +137,26 @@ post '/set_session/:id' do
   session[:user] = params[:id]
 end
 
+get '/api/exercises' do
+  if exercises = current_user.exercises
+    # TODO: investigate adding metadata to the returned collection
+    # such as total count, etc.
+    { :exercises => exercises }.to_json
+  else
+    json_status 404, "The requested exercise was not found"
+  end
+end
+
+post '/api/exercises' do
+  exercise = Exercise.new(params[:exercise])
+  current_user.exercises << exercise
+  if current_user.save
+    exercise.to_json
+  else
+    json_status 400, current_user.errors.to_hash
+  end
+end
+
 get '/api/exercises/:id' do
   if exercise = current_user.exercises.find(params[:id])
     exercise.to_json
@@ -183,9 +165,29 @@ get '/api/exercises/:id' do
   end
 end
 
-post '/api/exercises' do
-
+put '/api/exercises/:id' do
+  # TODO: add validation that id param is in the correct format
+  if exercise = current_user.exercises.find(params[:id])
+    # if the update_attributes method fails what could be the causes?
+    # - new attribute, models should not accept new attributes
+    # - somehow the attribute/s cause validation to fail
+    begin
+      if exercise.update_attributes(params[:exercise])
+        exercise.to_json
+      else
+        json_status 400, current_user.errors.to_hash
+      end
+    rescue Mongoid::Errors::UnknownAttribute
+      json_status 400, "Sorry, but you can't add an unknown attribute"
+    end
+  else
+    json_status 404, "The requested exercise was not found"
+  end
 end
+
+# delete 'api/exercises/:id' do
+# end
+
 
 # post '/' do
   # content_type :json
@@ -193,61 +195,6 @@ end
   # w = Workout.new
   # used to determine if workout is valid or not. if at least one exercise has valid
   # data, then the workout is valid and will be persisted.
-
-=begin
-  wo_valid = false
-
-  # TODO: DRY this up
-  1.upto(params[:st_cnt].to_i) do |i|
-    # check that reps field has data. if no data, assume user has not entered a
-    # valid exercise and do not create one.
-    reps = params["st_reps#{i}".to_sym]
-    unless reps.empty?
-      wo_valid = true
-      st = StrengthExercise.new
-      st.exercise_name = params["st_exercise#{i}".to_sym]
-      st.sets = params["st_sets#{i}".to_sym].to_i
-      st.reps = reps.to_i
-      w.exercises << st
-    end
-  end
-
-  1.upto(params[:ca_cnt].to_i) do |i|
-    # same as reps above
-    cals = params["ca_calories#{i}".to_sym]
-    unless cals.empty?
-      wo_valid = true
-      ca = CardioExercise.new
-      ca.exercise_name = params["ca_exercise#{i}".to_sym]
-      puts params
-      ca.duration = params["ca_duration#{i}".to_sym].to_f
-      ca.distance = params["ca_distance#{i}".to_sym].to_f
-      ca.calories = cals
-      #ca.calories = params["calories#{i}".to_sym]
-      w.exercises << ca
-    end
-  end
-  # TODO: add logic that does not create workout if no exercise is valid
-  # DONE
-  if (wo_valid)
-    w.created_at = Time.now
-    w.updated_at = Time.now
-    # TODO:
-    # need to verify that the save operation completed successfully
-    # have server update the "flash" if an error occurs.
-    # add validation to the Workout and Exercise models
-    # save workout to current_user's workout collection
-    puts "DEBUG: about to push workout on workouts collection"
-    current_user.workouts << w
-    puts "DEBUG: about to save current_user"
-    current_user.save
-    # w.save
-    # respond with current workout object
-    # should I respond with workout object here or should i move to the "single retrieve" action
-    w.to_json
-  end
-end
-=end
 
 get '/logs' do
   # need to investigate the necessary of specifying the content as json via
@@ -261,11 +208,14 @@ get '/from/:fr_year/:fr_month/:fr_day/to/:to_year/:to_month/:to_day' do
   "from date: #{params[:fr_year]} #{params[:fr_month]} #{params[:fr_day]}   to date: #{params[:to_year]} #{params[:to_month]} #{params[:to_day]}"
 end
 
+# Misc Handlers
+# =============================================================================
+error do
+  json_status 500, env['sinatra.error'].message
+end
 
 # Helpers
 # =============================================================================
-#
-#ActiveRecord::Base.include_root_in_json = false
 
 # Include Rack utils and alias the escape_html function to h()
 # actually, do I really need this?  I should catch malformed input at the client side

@@ -21,7 +21,7 @@ FactoryGirl.define do
   end
 
   factory :exercise do
-    exercise_name "Push Ups"
+    name "Push Ups"
     workout_date  { Date.today }
     start_time    { Time.now }
     calories      100
