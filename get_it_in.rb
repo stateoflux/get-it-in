@@ -25,21 +25,36 @@ class User
   field :email
   field :hashed_password
   field :salt
-  field :token
+  # field :token
   has_many :exercises
   # embeds_many :exercises
   accepts_nested_attributes_for :exercises
 
-  # Validations
-  # TODO: determine how to set error messages
-  # validates_uniqueness_of   :email
-  # validates_format_of       :email, :with =>/\w{4,}/i
-  validates_presence_of     :password
-  validates_confirmation_of :password
-  # validates_length_of       :password, :min => 6
-
   # TODO: add security to the hashed_password, salt & token fields
+  # attr_accessor allows for virtual attributes
   attr_accessor :password, :password_confirmation
+
+  # per stackoverflow post, the only requirements that names should have are
+  # - not zero length
+  # - except any and all unicode
+  # - reject ^\pM\pC\pZ (need to investigate these chars)
+  # http://stackoverflow.com/questions/4718266/advice-on-how-to-validate-names-and-surnames-using-regex
+  # html5 regex for email validation: 
+  # http://www.whatwg.org/specs/web-apps/current-work/multipage/states-of-the-type-attribute.html#valid-e-mail-address
+  validates :first_name,  presence: true,
+                          format: { :with => /^\w+$/ }
+
+  validates :last_name,   presence: true,
+                          format: { :with => /^\w+$/ }
+
+  validates :email,       presence: true,
+                          format: { :with => /^[a-zA-Z0-9.!\#$%&'*+\/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/ },
+                          uniqueness: true
+
+  validates :password,    presence: true,
+                          confirmation: true,
+                          length: { minimum: 4 }
+
 
   def encrypt_password(passwd)
    self.salt = BCrypt::Engine.generate_salt
@@ -47,7 +62,6 @@ class User
   end
 
   def self.authenticate(email, pass)
-    # first returns a single document
     current_user = User.find_by(email: email)
     return nil if current_user.nil?
     return current_user if current_user.hashed_password == BCrypt::Engine.hash_secret(pass, current_user.salt)
@@ -64,8 +78,7 @@ class Exercise
   include Mongoid::Document
   # TODO: convert duration field to hours & mins fields
   field :name, type: String
-  field :workout_date, type: Date
-  field :start_time, type: Time
+  field :workout_timestamp, type: DateTime
   field :duration, type: Integer  # will represent number of mins
   field :sets, type: Integer
   field :reps, type: Integer
@@ -73,12 +86,25 @@ class Exercise
   field :calories, type: Integer
   belongs_to :user
   # embedded_in :workout
+  
+  # virtual attributes which will be used to create the workout_timestamp 
+  # expects a "Zulu" time ISO8601 formatted  string
+  # ie. 2009-09-28T19:03:12Z
+  attr_accessor :w_timestamp
 
-  # Validations
-  # validates_presence_of :duration
-  # validates_format_of :duration, :with =>/[1-9]{1,5}/
+  validates :name,          presence: true,
+                            format: { :with => /^[\w\s]{2,}$/ }
+  validates :duration,      presence: true
+
+  validates :w_timestamp,    presence: true
+                            # format: { :with => /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|1\d|2\d|3[0-1])$/ }
+
   def as_json(options={})
     super(root: true)
+  end
+
+  def set_timestamp
+    self.workout_timestamp = DateTime.iso8601(w_timestamp)
   end
 end
 
@@ -150,6 +176,8 @@ end
 post '/api/exercises' do
   exercise = Exercise.new(params[:exercise])
   current_user.exercises << exercise
+  # rescue ArgumentError
+  #  json_status 400, "the workout timestamp does not follow the iso8601 format"
   if current_user.save
     exercise.to_json
   else
@@ -185,31 +213,40 @@ put '/api/exercises/:id' do
   end
 end
 
-# delete 'api/exercises/:id' do
+delete '/api/exercises/:id' do
+  if exercise = current_user.exercises.find(params[:id])
+    exercise.destroy
+    status 200
+  else
+    json_status 404, "The requested exercise was not found"
+  end
+end
+
+
+# get '/from/:fr_year/:fr_month/:fr_day/to/:to_year/:to_month/:to_day' do
+#   "from date: #{params[:fr_year]} #{params[:fr_month]} #{params[:fr_day]}   to date: #{params[:to_year]} #{params[:to_month]} #{params[:to_day]}"
 # end
 
 
-# post '/' do
-  # content_type :json
-  # w = current_user.workouts.new(Workout.new)
-  # w = Workout.new
-  # used to determine if workout is valid or not. if at least one exercise has valid
-  # data, then the workout is valid and will be persisted.
-
-get '/logs' do
-  # need to investigate the necessary of specifying the content as json via
-  content_type :json
-
-  workouts = Workout.asc(:id)
-  workouts.to_json
-end
-
-get '/from/:fr_year/:fr_month/:fr_day/to/:to_year/:to_month/:to_day' do
-  "from date: #{params[:fr_year]} #{params[:fr_month]} #{params[:fr_day]}   to date: #{params[:to_year]} #{params[:to_month]} #{params[:to_day]}"
-end
 
 # Misc Handlers
 # =============================================================================
+get "*" do
+  status 404
+end
+
+# put_or_post "*" do
+#   status 404
+# end
+
+delete "*" do
+  status 404
+end
+
+not_found do
+  json_status 404, "Not found"
+end
+
 error do
   json_status 500, env['sinatra.error'].message
 end

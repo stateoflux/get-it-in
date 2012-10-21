@@ -1,8 +1,11 @@
 FactoryGirl.define do
 
   factory :user do
-    email  "wayne.montague@zmail.com"
-    hashed_password {}
+    first_name              "wayne"
+    last_name               "montague"
+    email                   "wayne.montague@zmail.com"
+    password                "test123"
+    password_confirmation   "test123"
     factory :user_with_exercises do
       # workout_count is declared as an ignored attribute and available in
       # attributes on the factory, as well as the callback via the evaluator
@@ -22,8 +25,9 @@ FactoryGirl.define do
 
   factory :exercise do
     name "Push Ups"
-    workout_date  { Date.today }
-    start_time    { Time.now }
+    w_timestamp  "2012-08-04T19:30:00Z"
+    # workout_date  { Date.today }
+    # start_time    { Time.now }
     calories      100
     duration      30   # would like to randomize this
     sets          5

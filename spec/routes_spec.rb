@@ -233,22 +233,8 @@ describe "GET api/exercises" do
       end
     end
 
-    describe "when request fails" do
-
-      it "responds with status code 400" do
-        skip
-        last_response.must_be :client_error?
-      end
-
-      it "responds with an error json object" do
-        skip
-        response = JSON.parse(last_response.body)
-        response.size.must_be :>=, 2
-        response['status'].must_equal 400
-        response['reason'].must_be_instance_of Hash
-        # response['reason'].wont_be :empty?
-      end
-    end
+    # right now, I can't think of a scenerio where the request would fail
+    # unless some type of exception was thrown by Mongoid.
   end
 end
 
@@ -367,12 +353,6 @@ describe "PUT api/exercises/:id" do
     describe "when an attribute has an error" do
       before do
         stub(@wayne.exercises[0]).update_attributes { false }
-        # TODO: will have to investigate how to stop dynamic attributes being added to Models
-        # - set allow_dynamic_fields to false in mongoid config file
-        # Mongoid throws a Mongoid::Errors::UnknownAttribute since I'm trying to add a beer attribute to
-        # the exercise model.  How should I handle this exception in my app?
-        # I tried using an "error" block, but it doesn't seem to work.
-        # - i ended up using a rescue block
         put '/api/exercises/' + @wayne.exercises[0].id, :exercise => {name: "running"}
       end
 
@@ -410,6 +390,49 @@ describe "PUT api/exercises/:id" do
         response['status'].must_equal 400
         response['reason'].must_be_instance_of String
         # response['reason'].wont_be :empty?
+      end
+    end
+  end
+end
+
+
+describe "delete api/exercises/:id" do
+
+  describe "when user in not logged in" do
+    it "responds with status code 400" do
+      delete '/api/exercises/1'
+      last_response.must_be :client_error?
+    end
+  end
+
+  describe "when user is logged in" do
+    before do
+      @wayne = FactoryGirl.build(:user_with_exercises)
+      login_as(@wayne)
+      delete '/api/exercises/' + @wayne.exercises[0].id
+    end
+
+    describe "when request succeeds" do
+      it "responds with a status code 200" do
+        last_response.must_be :successful?
+      end
+    end
+
+    describe "when request fails" do
+      before do
+        delete '/api/exercises/7'
+      end
+
+      it "responds with status code 404" do
+        last_response.must_be :not_found?
+      end
+
+      it "responds with an error json object" do
+        response = JSON.parse(last_response.body)
+        response.size.must_be :>=, 2
+        response['status'].must_equal 404
+        response['reason'].must_be_instance_of String
+        response['reason'].wont_be :empty?
       end
     end
   end
