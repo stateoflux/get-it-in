@@ -11,14 +11,17 @@ def app() Sinatra::Application end
 # TODO: remove the coupling between the authentication test cases and User model
 describe "POST signup" do
   before do
-    @email = 'wayne.montague@zmail.com'
-    @passwd = 'zion'
+    @user_attrs = { :user => FactoryGirl.attributes_for(:user) }
+    # @email = 'wayne.montague@zmail.com'
+    # @passwd = 'zion'
   end
 
   describe "when signup succeeds" do
     before do
-      post '/signup', :email => @email, :password => @passwd,
-        :password_confirmation => @passwd
+      # pp @user_attrs
+      post '/signup', @user_attrs
+      # post '/signup', :email => @email, :password => @passwd,
+      #  :password_confirmation => @passwd
     end
 
     it "responds with status code 200" do
@@ -35,8 +38,8 @@ describe "POST signup" do
 
   describe "when signup fails" do
     before do
-      post '/signup', :email => @email, :password => @passwd,
-        :password_confirmation => "zion1"
+      @user_attrs = { :user => FactoryGirl.attributes_for(:user, :password_confirmation => "zion1") }
+      post '/signup', @user_attrs
     end
 
     it "responds with status code 400" do
@@ -54,23 +57,16 @@ end
 
 describe "POST login" do
   before do
-    @passwd = 'zion'
-    # same as default email field in User factory
-    # would be nice to figure out how to remove this dependency
-    @email = 'wayne.montague@zmail.com'
+    @user_attrs = { :user => FactoryGirl.attributes_for(:user, first_name: nil,
+                                                        last_name: nil,
+                                                        password_confirmation: nil) }
   end
 
   describe "when login succeeds" do
     before do
-      # hmmm, the test case is looking for email & pass, not sure why.  will have to investigate
-      # mock(User).authenticate(email, pass).returns(FactoryGirl.build(:user))
-       # stub out the authenticate method
-       class User
-         def self.authenticate(email, pass)
-           FactoryGirl.build(:user)
-         end
-       end
-      post '/login', :email => @email, :password => @passwd
+      mock(User).authenticate(@user_attrs[:user][:email],
+                              @user_attrs[:user][:password]).returns(FactoryGirl.build(:user))
+      post '/login', @user_attrs
     end
 
     it "responds with status code 200" do
@@ -87,13 +83,9 @@ describe "POST login" do
 
   describe "when login fails" do
     before do
-      # stub out the authenticate method
-      class User
-        def self.authenticate(email, pass)
-          false
-        end
-      end
-      post '/login', :email => @email, :password => @passwd
+      mock(User).authenticate(@user_attrs[:user][:email],
+                              @user_attrs[:user][:password]).returns(false)
+      post '/login', @user_attrs
     end
 
     it "responds with status code 400" do
@@ -157,7 +149,8 @@ describe "POST api/exercises" do
     before do
       @wayne = FactoryGirl.build(:user_with_exercises)
       login_as(@wayne)
-      @squats = FactoryGirl.attributes_for(:exercise, name: "squats", workout_date: Date.today.to_s)
+      @squats = FactoryGirl.attributes_for(:exercise, name: "squats")
+      # @squats = FactoryGirl.attributes_for(:exercise, name: "squats", w_timestamp: DateTime.now.utc.to_s)
     end
 
     describe "when request succeeds" do
@@ -174,8 +167,7 @@ describe "POST api/exercises" do
         response = JSON.parse(last_response.body)
         response['exercise'].wont_be :empty?
         response['exercise']['name'].must_equal @squats[:name]
-        response['exercise']['workout_date'].must_equal @squats[:workout_date]
-        # response['exercise']['start_time'].must_equal
+        # response['exercise']['workout_timestamp'].must_equal @squats[:w_timestamp]
         response['exercise']['calories'].must_equal @squats[:calories]
         response['exercise']['duration'].must_equal @squats[:duration]
         response['exercise']['sets'].must_equal @squats[:sets]
@@ -264,8 +256,7 @@ describe "GET api/exercises/:id" do
         response = JSON.parse(last_response.body)
         response['exercise'].wont_be :empty?
         response['exercise']['name'].must_equal @wayne.exercises[0][:name]
-        response['exercise']['workout_date'].must_equal @wayne.exercises[0][:workout_date]
-        # response['exercise']['start_time'].must_equal @wayne.exercises[0][:start_time]
+        # response['exercise']['workout_timestamp'].must_equal @wayne.exercises[0][:w_timestamp]
         response['exercise']['calories'].must_equal@wayne.exercises[0][:calories]
         response['exercise']['duration'].must_equal @wayne.exercises[0][:duration]
         response['exercise']['sets'].must_equal @wayne.exercises[0][:sets]
@@ -323,8 +314,7 @@ describe "PUT api/exercises/:id" do
         response['exercise'].wont_be :empty?
         response['exercise']['name'].must_equal "running"
         response['exercise']['distance'].must_equal 4
-        response['exercise']['workout_date'].must_equal @wayne.exercises[0][:workout_date]
-        # response['exercise']['start_time'].must_equal @wayne.exercises[0][:start_time]
+        # response['exercise']['workout_timestamp'].must_equal @wayne.exercises[0][:w_timestamp]
         response['exercise']['calories'].must_equal@wayne.exercises[0][:calories]
         response['exercise']['duration'].must_equal @wayne.exercises[0][:duration]
         response['exercise']['sets'].must_equal @wayne.exercises[0][:sets]

@@ -26,12 +26,6 @@ describe "User" do
     @user.errors['first_name'].wont_be :empty?
   end
 
-  it "is not valid without a last name" do
-    @user.last_name = nil
-    @user.wont_be :valid?
-    @user.errors['last_name'].wont_be :empty?
-  end
-
   it "is not valid without an email" do
     @user.email = nil
     @user.wont_be :valid?
@@ -48,12 +42,6 @@ describe "User" do
     @user.first_name = ""
     @user.wont_be :valid?
     @user.errors['first_name'].wont_be :empty?
-  end
-
-  it "is not valid if first_name is less than 1 character" do
-    @user.last_name = ""
-    @user.wont_be :valid?
-    @user.errors['last_name'].wont_be :empty?
   end
 
   it "is not valid if email is malformed" do
@@ -125,6 +113,36 @@ describe "Exercise" do
       @exercise.w_timestamp = "08-13-12"
       @exercise.set_timestamp
     end.must_raise ArgumentError
+  end
+
+  it "is not valid if duration is a negative integer" do
+    @exercise.duration = -20
+    @exercise.wont_be :valid?
+    @exercise.errors['duration'].wont_be :empty?
+  end
+
+  it "is not valid if sets is a negative integer" do
+    @exercise.sets = -20
+    @exercise.wont_be :valid?
+    @exercise.errors['sets'].wont_be :empty?
+  end
+
+  it "is not valid if reps is a negative integer" do
+    @exercise.reps = -20
+    @exercise.wont_be :valid?
+    @exercise.errors['reps'].wont_be :empty?
+  end
+
+  it "is not valid if calories is a negative integer" do
+    @exercise.calories = -200
+    @exercise.wont_be :valid?
+    @exercise.errors['calories'].wont_be :empty?
+  end
+
+  it "is not valid if distance is a negative float" do
+    @exercise.distance = -20.0
+    @exercise.wont_be :valid?
+    @exercise.errors['distance'].wont_be :empty?
   end
 end
 

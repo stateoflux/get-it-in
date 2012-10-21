@@ -1,6 +1,5 @@
 require 'sinatra'
 require 'mongoid'
-# require 'slim'
 require 'json'
 require "sinatra/reloader" if development?
 # TODO: add gems below to Gemfile and use bundler to handle dependencies
@@ -27,10 +26,10 @@ class User
   field :salt
   # field :token
   has_many :exercises
-  # embeds_many :exercises
   accepts_nested_attributes_for :exercises
 
   # TODO: add security to the hashed_password, salt & token fields
+
   # attr_accessor allows for virtual attributes
   attr_accessor :password, :password_confirmation
 
@@ -45,7 +44,8 @@ class User
                           format: { :with => /^\w+$/ }
 
   validates :last_name,   presence: true,
-                          format: { :with => /^\w+$/ }
+                          format: { :with => /^\w+$/ },
+                          allow_blank: true
 
   validates :email,       presence: true,
                           format: { :with => /^[a-zA-Z0-9.!\#$%&'*+\/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/ },
@@ -76,17 +76,17 @@ end
 # =============================================================================
 class Exercise
   include Mongoid::Document
-  # TODO: convert duration field to hours & mins fields
+  # Mongoid provides an easy mechanism for transforming form strings into
+  # their appropriate types through the definition of fields
   field :name, type: String
   field :workout_timestamp, type: DateTime
-  field :duration, type: Integer  # will represent number of mins
+  field :duration, type: Integer  # will represent number of secs
   field :sets, type: Integer
   field :reps, type: Integer
   field :distance, type: Float  # in miles
   field :calories, type: Integer
   belongs_to :user
-  # embedded_in :workout
-  
+
   # virtual attributes which will be used to create the workout_timestamp 
   # expects a "Zulu" time ISO8601 formatted  string
   # ie. 2009-09-28T19:03:12Z
@@ -96,8 +96,13 @@ class Exercise
                             format: { :with => /^[\w\s]{2,}$/ }
   validates :duration,      presence: true
 
-  validates :w_timestamp,    presence: true
-                            # format: { :with => /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|1\d|2\d|3[0-1])$/ }
+  validates :w_timestamp,   presence: true
+
+  validates :duration,      numericality: { greater_than: 0 }, allow_nil: true
+  validates :sets,          numericality: { greater_than: 0 }, allow_nil: true
+  validates :reps,          numericality: { greater_than: 0 }, allow_nil: true
+  validates :distance,      numericality: { greater_than: 0 }, allow_nil: true
+  validates :calories,      numericality: { greater_than: 0 }, allow_nil: true
 
   def as_json(options={})
     super(root: true)
@@ -120,14 +125,8 @@ end
 # Route Handlers
 # =============================================================================
 post '/signup' do
-  # content_type :json  # TODO is this the standard way of specifying a json response?
-  # TODO: determine a way to group form parameters into a hash that I can
-  # directly pass to the User.create method
-  # ie: user = User.create(params[:user]
-  user = User.new(:email => params[:email],
-                  :password => params[:password],
-                  :password_confirmation => params[:password_confirmation])
-  user.encrypt_password(params[:password])
+  user = User.new(params[:user])
+  user.encrypt_password(params[:user][:password])
   if user.save
     session[:user] = user.id
     auth_response 200, user
@@ -137,9 +136,9 @@ post '/signup' do
 end
 
 post '/login' do
-  if user = User.authenticate(params[:email], params[:password])
+  if user = User.authenticate(params[:user][:email], params[:user][:password])
     session[:user] = user.id
-    auth_response(200, user)
+    auth_response 200, user
   else
     json_status 400, "Login credentials are incorrect"
   end
@@ -175,9 +174,12 @@ end
 
 post '/api/exercises' do
   exercise = Exercise.new(params[:exercise])
+  begin
+    exercise.set_timestamp
+  rescue ArgumentError
+    json_status 400, "the workout timestamp does not follow the iso8601 format"
+  end
   current_user.exercises << exercise
-  # rescue ArgumentError
-  #  json_status 400, "the workout timestamp does not follow the iso8601 format"
   if current_user.save
     exercise.to_json
   else
