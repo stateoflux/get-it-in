@@ -1,7 +1,7 @@
 source "http://rubygems.org"
 
 gem "sinatra"
-gem "thin"
+# gem "thin"
 gem "sinatra-reloader"
 gem "mongoid", "~> 3.0.0"
 gem "bson_ext", "~> 1.5"

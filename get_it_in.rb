@@ -2,9 +2,7 @@ require 'sinatra'
 require 'mongoid'
 require 'json'
 require "sinatra/reloader" if development?
-# TODO: add gems below to Gemfile and use bundler to handle dependencies
 require 'bcrypt'
-require 'securerandom'
 
 # to protect session data
 use Rack::Session::Cookie, :secret => 'A1 sauce 1s so good you should use 1t on a11 yr st34ksssss'
@@ -149,9 +147,10 @@ get '/logout' do
   { :status => 200 }.to_json
 end
 
-get '/' do
-   erb :workout_new
-end
+# I don't think I need this route anymore
+# get '/' do
+#   erb :workout_new
+# end
 
 # a Fake route. Only used for setting the session
 # in order to test the API.
